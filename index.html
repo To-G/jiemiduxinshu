@@ -1,20 +1,26 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>读心术解密</title>
+    <script>
+        window.inject = function (_mortonH5) {
+            window.mortonH5 = _mortonH5;
+        };
+    </script>
     <style>
         :root {
-            --bg: #07111f;
-            --bg-deep: #030712;
-            --panel: rgba(8, 20, 36, 0.86);
-            --line: rgba(118, 198, 255, 0.22);
+            --bg: #12152b;
+            --bg-deep: #0d1020;
+            --panel: #1e223d;
+            --line: rgba(79, 209, 197, 0.22);
             --text: #eef6ff;
-            --muted: #9cb8d3;
-            --accent: #79f0df;
-            --accent-2: #ffd76a;
+            --muted: #8b9cb8;
+            --accent: #4fd1c5;
+            --accent-2: #f6ad55;
             --danger: #ff6b6b;
-            --cell-border: rgba(130, 180, 255, 0.18);
+            --cell-border: rgba(79, 209, 197, 0.15);
         }
 
         * {
@@ -26,12 +32,63 @@
 
         html, body { min-height: 100%; }
 
+        #app {
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .page-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: rgba(3, 7, 18, 0.92);
+        }
+
+        .page-loading[hidden] { display: none; }
+
+        .page-loading span {
+            color: #9cb8d3;
+            font-size: 14px;
+            letter-spacing: 4px;
+            margin-bottom: 18px;
+        }
+
+        .page-loading .loading {
+            width: 48px;
+            height: 48px;
+            position: relative;
+        }
+
+        .page-loading .shape {
+            width: 25%;
+            height: 25%;
+            position: absolute;
+            border-radius: 50%;
+            top: 40%;
+        }
+
+        .page-loading .shape-1 { background: #79f0df; animation: loadingShape1 1s ease infinite; }
+        .page-loading .shape-2 { background: #ffd76a; left: 25%; }
+        .page-loading .shape-3 { background: #8bf6e8; left: 50%; }
+        .page-loading .shape-4 { background: #ff6b6b; left: 75%; animation: loadingShape4 1s ease infinite; }
+
+        @keyframes loadingShape1 {
+            0% { left: -25%; top: 5px; }
+            25%, 50%, 75% { left: 0; top: 40%; }
+            100% { left: -25%; top: 5px; }
+        }
+
+        @keyframes loadingShape4 {
+            0%, 25%, 75%, 100% { left: 75%; top: 40%; }
+            50% { left: 125%; top: 5px; }
+        }
+
         body {
-            background:
-                radial-gradient(circle at 20% 20%, rgba(63, 111, 255, 0.16), transparent 28%),
-                radial-gradient(circle at 82% 18%, rgba(121, 240, 223, 0.12), transparent 24%),
-                radial-gradient(circle at 50% 80%, rgba(255, 215, 106, 0.08), transparent 30%),
-                linear-gradient(180deg, #0a1527 0%, #050b15 52%, #03060d 100%);
+            background: linear-gradient(180deg, #151833 0%, var(--bg) 40%, var(--bg-deep) 100%);
             color: var(--text);
             overflow-x: hidden;
             position: relative;
@@ -114,14 +171,168 @@
         .app-shell {
             display: none;
             min-height: 100vh;
-            padding: 24px 36px 40px;
+            flex-direction: column;
             position: relative;
             z-index: 2;
         }
 
         .app-shell.active {
-            display: block;
+            display: flex;
             animation: revealApp .6s ease both;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 14px 24px;
+            position: relative;
+            z-index: 30;
+            flex-shrink: 0;
+            min-height: 88px;
+        }
+
+        .header-tip-slot {
+            flex: 1;
+            max-width: min(560px, calc(100% - 160px));
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-tip {
+            width: 100%;
+            height: 100%;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, rgba(79, 209, 197, 0.96) 0%, rgba(246, 173, 85, 0.94) 100%);
+            color: #132230;
+            border-radius: 18px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.45;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            white-space: pre-wrap;
+        }
+
+        .header-tip.show {
+            opacity: 1;
+            visibility: visible;
+            animation: headerTipIn 0.45s ease both;
+        }
+
+        .btn-restart {
+            border: 1px solid rgba(79, 209, 197, 0.28);
+            background: rgba(30, 34, 61, 0.92);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: border-color 0.2s, background 0.2s;
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-shrink: 0;
+        }
+
+        .btn-restart:hover {
+            border-color: rgba(79, 209, 197, 0.55);
+            background: rgba(40, 46, 78, 0.95);
+        }
+
+        @keyframes headerTipIn {
+            from { opacity: 0; transform: scale(0.92) translateY(-6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .main-layout {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 0 24px 12px;
+            align-items: stretch;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-panel {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: stretch;
+            flex-shrink: 0;
+        }
+
+        #secretBtn {
+            flex-shrink: 0;
+            min-width: 148px;
+            height: 48px;
+            padding: 0 28px;
+            border-radius: 999px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #fff4b8 0%, var(--accent-2) 52%, #ffe9a8 100%);
+            color: #1a2030;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 1;
+            transform: none;
+            transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        #secretBtn.locked {
+            background: linear-gradient(180deg, rgba(42, 48, 74, 0.96) 0%, rgba(28, 32, 55, 0.96) 100%);
+            color: rgba(255, 255, 255, 0.42);
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        #secretBtn.reveal {
+            pointer-events: auto;
+            animation: secretBtnSoftBreath 2.4s ease-in-out infinite;
+        }
+
+        #secretBtn.flying {
+            position: fixed;
+            z-index: 300;
+            pointer-events: none;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 28px rgba(246, 173, 85, 0.45);
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-align: center;
+            height: 20px;
+            line-height: 20px;
+            flex-shrink: 0;
         }
 
         @keyframes revealApp {
@@ -129,64 +340,54 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        #resetBtn {
-            position: fixed;
-            top: 18px;
-            left: 18px;
-            width: 46px;
-            height: 46px;
-            font-size: 24px;
-            background: linear-gradient(180deg, #17304b 0%, #0e1f34 100%);
-            color: #fff6d2;
-            border: 1px solid rgba(255, 215, 106, 0.36);
-            border-radius: 14px;
-            cursor: pointer;
-            z-index: 30;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
 
-        .main-title {
-            text-align: center;
-            font-family: "STKaiti", "KaiTi", serif;
-            font-size: clamp(34px, 4vw, 52px);
-            font-weight: bold;
-            color: #f5fbff;
-            margin-bottom: 12px;
-            letter-spacing: 10px;
-            text-shadow: 0 0 24px rgba(121,240,223,0.18);
-        }
-
-        .main-subtitle {
-            text-align: center;
-            color: var(--muted);
-            font-size: 15px;
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-            min-height: 22px;
-        }
-
-        .container {
-            display: flex;
-            gap: 52px;
-            align-items: flex-start;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 0;
-        }
+        .container { display: contents; }
 
         .boardWrap {
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 18px;
-            padding: 24px 24px 20px;
+            gap: 16px;
+            padding: 20px 20px 22px;
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 28px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.36);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+            width: fit-content;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .secret-btn-slot {
+            min-height: 52px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .board-hint {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+            text-align: center;
+            width: 100%;
+            max-width: 560px;
+            min-height: 44px;
+            flex-shrink: 0;
+            padding: 0 6px;
+        }
+
+        .hint-icon {
+            font-size: 18px;
+            line-height: 1.35;
+            flex-shrink: 0;
         }
 
         .board {
@@ -226,8 +427,8 @@
             background: linear-gradient(180deg, #8bf6e8 0%, #5be2d2 100%) !important;
             color: #051019 !important;
             font-size: 20px !important;
-            border-color: rgba(255,255,255,0.52);
-            box-shadow: 0 0 18px rgba(121,240,223,0.34);
+            border-color: rgba(255, 255, 255, 0.52);
+            box-shadow: 0 0 18px rgba(121, 240, 223, 0.34);
         }
 
         .num.light.animate {
@@ -375,63 +576,156 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
-            width: 320px;
-            padding: 24px;
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            padding: 20px 16px 22px;
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 28px;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+            box-sizing: border-box;
+        }
+
+        .flow-keypad {
+            width: 100%;
+            margin-top: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
         }
 
         .inputFixed {
             position: relative;
             width: 100%;
-            height: 84px;
+            height: 90px;
         }
 
-        .box {
-            width: 100%;
-            min-height: 78px;
-            border: 1px solid rgba(126, 190, 255, 0.24);
-            border-radius: 18px;
+        /* 双格输入容器 */
+        .digit-inputs {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .digit-sep { display: none; }
+
+        .digit-cell {
+            width: 88px;
+            height: 88px;
+            border: 2px solid rgba(126, 190, 255, 0.28);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: rgba(7, 16, 29, 0.92);
-            color: var(--text);
-            padding: 0 14px;
-            text-align: center;
+            position: relative;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .arrow {
-            width: 0;
-            height: 0;
-            border-left: 13px solid transparent;
-            border-right: 13px solid transparent;
-            border-top: 16px solid rgba(121,240,223,0.92);
+        .digit-cell.focused {
+            border-color: rgba(79, 209, 197, 0.85);
+            box-shadow: 0 0 18px rgba(79, 209, 197, 0.22);
         }
 
-        input {
+        .digit-cell.locked {
+            border-color: rgba(246, 173, 85, 0.55);
+            background: rgba(246, 173, 85, 0.06);
+        }
+
+        .digit-cell input {
             width: 100%;
             height: 100%;
             border: none;
             outline: none;
             text-align: center;
-            font-size: 28px;
+            font-size: 40px;
             font-weight: bold;
             background: transparent;
             color: #f6fbff;
-            letter-spacing: 2px;
+            caret-color: transparent;
+            padding-bottom: 14px;
         }
 
-        .inputFixed.guide-input .box {
+        .digit-cell.locked input {
+            color: rgba(255, 215, 106, 0.9);
+        }
+
+        .digit-label {
+            position: absolute;
+            bottom: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* 计算步骤框 */
+        .calc-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            flex-shrink: 0;
+            min-height: 72px;
+        }
+
+        .calc-label {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 1px;
+            padding: 0 4px;
+            margin-bottom: 3px;
+            height: 18px;
+            line-height: 18px;
+            flex-shrink: 0;
+        }
+
+        .box {
+            width: 100%;
+            height: 52px;
+            min-height: 52px;
+            border: 1px solid rgba(126, 190, 255, 0.18);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: rgba(5, 12, 24, 0.88);
+            color: var(--text);
+            padding: 0 14px;
+            text-align: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid rgba(121,240,223,0.6);
+            margin: 4px auto;
+            flex-shrink: 0;
+        }
+
+        .inputFixed.guide-input .digit-cell {
             animation: inputGuidePulse 1.2s ease-in-out 2;
             border-color: rgba(255, 215, 106, 0.78);
             box-shadow: 0 0 24px rgba(255, 215, 106, 0.2);
         }
 
         .inputFixed.guide-input::before {
+            display: none;
             content: attr(data-guide);
             position: absolute;
             left: 50%;
@@ -451,6 +745,7 @@
         }
 
         .inputFixed.guide-input::after {
+            display: none;
             content: "";
             position: absolute;
             left: 50%;
@@ -465,42 +760,63 @@
             animation: inputHintFloat 0.28s ease both;
         }
         /* 小手引导图标 */
-        /* 小手引导图标 */
         .hand-guide {
             position: absolute;
             font-size: 42px;
             z-index: 100;
             pointer-events: none;
-            animation: handGuideMove 2s ease-in-out 3;
+            opacity: 1;
+            transform: scale(1);
         }
 
-        @keyframes handGuideMove {
+        /* 涟漪效果 */
+        .ripple-effect {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(79, 209, 197, 0.8);
+            animation: rippleExpand 0.7s ease-out forwards;
+            pointer-events: none;
+            z-index: 201;
+        }
+
+        /* 数字键盘引导发光边框 */
+        .numpad.guide-glow {
+            border-radius: 14px;
+            box-shadow: 0 0 0 2px rgba(121, 240, 223, 0.7),
+                        0 0 18px 4px rgba(121, 240, 223, 0.35),
+                        0 0 36px 8px rgba(121, 240, 223, 0.15);
+            animation: numpadGlowPulse 1.2s ease-in-out 3;
+        }
+
+        @keyframes numpadGlowPulse {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(121,240,223,0.7), 0 0 18px 4px rgba(121,240,223,0.35), 0 0 36px 8px rgba(121,240,223,0.15); }
+            50%       { box-shadow: 0 0 0 3px rgba(121,240,223,1),   0 0 28px 8px rgba(121,240,223,0.55), 0 0 52px 16px rgba(121,240,223,0.25); }
+        }
+
+        /* 小手点击动画 */
+        .hand-guide.clicking {
+            animation: handClick 0.3s ease;
+        }
+
+        @keyframes handClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.85); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes rippleExpand {
             0% {
-                opacity: 0;
-                transform: translate(-30px, -80px) scale(0.6);
-            }
-            25% {
                 opacity: 1;
-                transform: translate(-10px, -20px) scale(1);
-            }
-            50% {
-                transform: translate(0, 5px) scale(1.05);
-            }
-            60% {
-                transform: translate(0, -5px) scale(0.95);
-            }
-            70% {
-                transform: translate(0, 3px) scale(1.02);
-            }
-            80% {
-                opacity: 1;
-                transform: translate(0, 0) scale(1);
+                transform: scale(0.5);
             }
             100% {
                 opacity: 0;
-                transform: translate(10px, 10px) scale(0.8);
+                transform: scale(2);
             }
         }
+
         @keyframes inputGuidePulse {
             0% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 215, 106, 0); }
             45% { transform: scale(1.035); box-shadow: 0 0 28px rgba(255, 215, 106, 0.34); }
@@ -513,40 +829,96 @@
         }
 
         /* 去掉 number 输入框上下箭头 */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
+        .digit-cell input::-webkit-outer-spin-button,
+        .digit-cell input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
 
-        input[type="number"] {
+        .digit-cell input[type="number"] {
             -moz-appearance: textfield;
             appearance: textfield;
         }
 
         #result {
-            color: #ffe7a2;
+            color: var(--accent-2);
             font-weight: bold;
+            font-size: 36px;
+            height: 64px;
+            min-height: 64px;
+            letter-spacing: 2px;
         }
 
-        #secretBtn {
-            padding: 13px 28px;
-            background: linear-gradient(135deg, #fff4b8 0%, #ffd76a 52%, #ffe9a8 100%);
-            color: #1d2530;
-            border: 1px solid rgba(255,255,255,0.45);
-            border-radius: 999px;
-            font-size: 16px;
+        /* 数字键盘 */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 7px;
+            width: 100%;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .numpad-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            width: 100%;
+            margin-top: 4px;
+            flex-shrink: 0;
+            height: 46px;
+        }
+
+        .numpad-btn {
+            height: 46px;
+            border: 1px solid rgba(126, 190, 255, 0.18);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(22, 40, 66, 0.96) 0%, rgba(12, 22, 40, 0.96) 100%);
+            color: #eef6ff;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
-            display: none;
-            opacity: 0;
-            transform: translateY(8px) scale(0.96);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s, transform 0.08s, box-shadow 0.12s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        #secretBtn.reveal {
-            opacity: 0.88;
-            transform: translateY(0) scale(1);
+        .numpad-btn:active {
+            transform: scale(0.92);
+            background: linear-gradient(180deg, rgba(121,240,223,0.22) 0%, rgba(60,180,160,0.18) 100%);
+            box-shadow: 0 0 12px rgba(121,240,223,0.18);
+        }
+
+        .numpad-btn.del-btn {
+            background: linear-gradient(180deg, rgba(50, 18, 18, 0.96) 0%, rgba(28, 10, 10, 0.96) 100%);
+            border-color: rgba(255, 107, 107, 0.28);
+            color: #ff9a9a;
+            font-size: 18px;
+        }
+
+        .numpad-btn.del-btn:active {
+            background: linear-gradient(180deg, rgba(255,107,107,0.22) 0%, rgba(180,60,60,0.18) 100%);
+            box-shadow: 0 0 12px rgba(255,107,107,0.22);
+        }
+
+        .numpad-actions .del-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .numpad-actions .del-icon {
+            flex-shrink: 0;
+        }
+
+        .numpad-btn.clear-btn {
+            background: linear-gradient(180deg, rgba(30, 38, 58, 0.96) 0%, rgba(20, 26, 44, 0.96) 100%);
+            font-size: 15px;
+            letter-spacing: 1px;
         }
 
         #secretBtn.reveal.soft-breath {
@@ -555,44 +927,17 @@
 
         @keyframes secretBtnSoftBreath {
             0%, 100% {
-                opacity: 0.86;
                 transform: translateY(0) scale(1);
-                box-shadow: 0 8px 18px rgba(0,0,0,0.24), 0 0 0 rgba(255,215,106,0);
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
             }
             50% {
-                opacity: 1;
-                transform: translateY(0) scale(1.035);
-                box-shadow: 0 10px 22px rgba(0,0,0,0.28), 0 0 18px rgba(255,215,106,0.22);
+                transform: translateY(0) scale(1.04);
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3), 0 0 18px rgba(246, 173, 85, 0.25);
             }
         }
 
-        /* 气泡：最高层，不被遮罩挡住 */
-        .tip-bubble {
-            position: fixed;
-            right: 30px;
-            bottom: 24px;
-            padding: 14px 20px;
-            font-size: 22px;
-            min-width: 180px;
-            max-width: 500px;
-            background: linear-gradient(135deg, rgba(126, 247, 229, 0.95) 0%, rgba(255, 231, 162, 0.96) 100%);
-            color: #132230;
-            border-radius: 20px 8px 20px 20px;
-            z-index: 300;
-            display: none;
-            animation: bubbleBlink 0.6s;
-            line-height: 1.45;
-            text-align: left;
-            white-space: pre-wrap;
-            box-shadow: 0 14px 28px rgba(0,0,0,0.34);
-        }
-
-        .tip-bubble.show { display: block; }
-
-        @keyframes bubbleBlink {
-            0% { opacity: 0; transform: scale(.84) translateY(12px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        /* 保留兼容，提示已移到 header */
+        .tip-bubble { display: none !important; }
 
         .focus-overlay {
             position: fixed;
@@ -706,53 +1051,125 @@
     </style>
 </head>
 <body>
+<div id="app">
 <div class="start-screen" id="startScreen">
     <div class="start-panel">
-        <h1 class="start-title">读心术数字的规律</h1>
+        <h1 class="start-title">读心术解密</h1>
         <button id="startBtn">开启探索</button>
     </div>
 </div>
 
 <div class="app-shell" id="appShell">
-    <button id="resetBtn">↻</button>
-    <h1 class="main-title">找一找数字的规律</h1>
-    <p class="main-subtitle"></p>
-
-    <div class="container">
-        <div class="boardWrap">
-            <div class="board" id="board"></div>
-            <button id="secretBtn">发现规律✅</button>
+    <header class="app-header">
+        <div class="header-tip-slot">
+            <div class="header-tip" id="normalTip"></div>
         </div>
+        <button type="button" class="btn-restart" id="resetBtn">↻ 重新开始</button>
+    </header>
 
-        <div class="flow">
-            <div class="inputFixed">
-                <div class="box">
-                    <input type="text" id="input" inputmode="numeric" maxlength="2" autocomplete="off" />
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div class="flow">
+                <div class="sidebar-title">输入一个两位数</div>
+                <div class="inputFixed">
+                    <div class="digit-inputs">
+                        <div class="digit-cell" id="cellTen">
+                            <input type="tel" id="inputTen" inputmode="numeric" maxlength="1" autocomplete="off" />
+                            <span class="digit-label">十位</span>
+                        </div>
+                        <span class="digit-sep">·</span>
+                        <div class="digit-cell" id="cellGe">
+                            <input type="tel" id="inputGe" inputmode="numeric" maxlength="1" autocomplete="off" />
+                            <span class="digit-label">个位</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow"></div>
+                <div class="calc-section">
+                    <div class="calc-label">减去个位</div>
+                    <div class="box" id="boxGe">—</div>
+                </div>
+                <div class="arrow"></div>
+                <div class="calc-section">
+                    <div class="calc-label">再减去十位</div>
+                    <div class="box" id="boxShi">—</div>
+                </div>
+                <div class="arrow"></div>
+                <div class="calc-section">
+                    <div class="calc-label">结果</div>
+                    <div class="box" id="result"></div>
+                </div>
+
+                <div class="flow-keypad">
+                    <div class="numpad" id="numpad">
+                        <button type="button" class="numpad-btn" data-digit="1">1</button>
+                        <button type="button" class="numpad-btn" data-digit="2">2</button>
+                        <button type="button" class="numpad-btn" data-digit="3">3</button>
+                        <button type="button" class="numpad-btn" data-digit="4">4</button>
+                        <button type="button" class="numpad-btn" data-digit="5">5</button>
+                        <button type="button" class="numpad-btn" data-digit="6">6</button>
+                        <button type="button" class="numpad-btn" data-digit="7">7</button>
+                        <button type="button" class="numpad-btn" data-digit="8">8</button>
+                        <button type="button" class="numpad-btn" data-digit="9">9</button>
+                        <button type="button" class="numpad-btn" data-digit="0">0</button>
+                    </div>
+                    <div class="numpad-actions">
+                        <button type="button" class="numpad-btn clear-btn" id="numpadClear">清空</button>
+                        <button type="button" class="numpad-btn del-btn" id="numpadDel2">
+                            <svg class="del-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                <path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/>
+                            </svg>
+                            删除
+                        </button>
+                    </div>
                 </div>
             </div>
+        </aside>
 
-            <div class="arrow"></div>
-            <div class="box" id="boxGe">减去这个数的个位数字：</div>
-            <div class="arrow"></div>
-            <div class="box" id="boxShi">减去这个数的十位数字：</div>
-            <div class="arrow"></div>
-            <div class="box" id="result"></div>
-        </div>
+        <section class="board-panel">
+            <div class="boardWrap">
+                <div class="board" id="board"></div>
+                <div class="board-hint">
+                    <span class="hint-icon">💡</span>
+                    <span class="hint-text">每算出一个结果，都会在这边点亮一个数，多试几个，看看你能发现什么规律？</span>
+                </div>
+                <div class="secret-btn-slot">
+                    <button type="button" id="secretBtn" class="locked">
+                        <span class="btn-icon">🔒</span>发现规律
+                    </button>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
-
-<div class="tip-bubble" id="normalTip"></div>
 
 <div class="focus-overlay" id="focusOverlay">
     <div class="focus-fly-layer" id="focusFlyLayer"></div>
     <button id="continueExploreBtn">继续探索</button>
 </div>
+</div>
 
-<audio id="bgm" src="bgm.mp3" loop preload="auto">
-<audio id="voiceAudio" preload="auto">
+<div class="page-loading">
+    <span>LOADING</span>
+    <div class="loading">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+</div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<audio id="voiceAudio" preload="auto"></audio>
 <audio id="effectAudio" preload="auto"></audio>
 
+<script src="mzone-global.2026-05-28.js"></script>
 <script>
+    const mzoneSdk = window.MzoneGlobal?.default || window.MzoneGlobal;
+    const { Global } = mzoneSdk || {};
+    const g = Global ? new Global('learning_class_gene_msg_h5') : null;
+
     const board = document.getElementById('board');
     const boardWrap = document.querySelector('.boardWrap');
     const appShell = document.getElementById('appShell');
@@ -763,7 +1180,10 @@
     const effectAudio = document.getElementById('effectAudio');
     const secretBtn = document.getElementById('secretBtn');
     const normalTip = document.getElementById('normalTip');
-    const input = document.getElementById('input');
+    const inputTen = document.getElementById('inputTen');
+    const inputGe = document.getElementById('inputGe');
+    const cellTen = document.getElementById('cellTen');
+    const cellGe = document.getElementById('cellGe');
     const inputFixed = document.querySelector('.inputFixed');
     const resetBtn = document.getElementById('resetBtn');
     const boxGe = document.getElementById('boxGe');
@@ -784,32 +1204,32 @@
     let isFocusAnimating = false;
     let hasPlayedThreeNumsFocus = false;
     let secretBtnTimer = null;
+    let secretBtnRevealed = false;
 
     const mathBubbleTimers = new WeakMap();
 
-    const lionNums = new Set([9,18,27,36,45,54,63,72,81,90,99]);
-    const randomEmojis = ["🐹","🍎","🍊","⭐","🐶","🌸","🐮","🔥","🌈","✨","💡","🦁"];
+    const lionNums = new Set([9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99]);
+    const randomEmojis = ["🐹", "🍎", "🍊", "⭐", "🐶", "🌸", "🐮", "🔥", "🌈", "✨", "💡", "🦁"];
 
     bgm.volume = 0.14;
 
     // 阶段音频配置
     const stageAudioConfig = {
-        start: { text: '先输入一个10到19之间的两位数，看看会得到什么结果', audio: 'audio/0.mp3' },
-        firstLight: { text: '很好。接下来试试其他两位数', audio: 'audio/1.mp3' },
-        secondLight: { text: '再尝试输入一个新的数，或许你会有所发现', audio: 'audio/2.mp3' },
-        thirdLight: { text: '看看你点亮的三个数，有什么共同的数学规律？你可以继续探索，验证你的猜想', audio: ['audio/3-1.mp3', 'audio/3-2.mp3'] },
-        fourthLight: { text: '通通过9好像可以计算出这些数，如果你发现了规律，可以点击图案下方的按钮', audio: 'audio/4.mp3' },
-        fifthLight: { text: '规律好像都在9的乘法口诀里', audio: 'audio/5.mp3' },
-        sixthLight: { text: '仔细观察这些数上面的气泡，你发现规律了吗', audio: 'audio/6.mp3' },
-        seventhLight: { text: '仔细观察这些数上面的气泡，你发现规律了吗', audio: 'audio/7.mp3' },
-        eighthLight: { text: '这些数除以9，好像都能除得尽', audio: 'audio/8.mp3' },
+        start: { text: '先输入一个10到19之间的两位数，看看会得到什么结果。', audio: 'audio/0.mp3' },
+        firstLight: { text: '很好，接下来试试其他两位数，20到99都可以。', audio: 'audio/1.mp3' },
+        secondLight: { text: '再尝试输入一个新的两位数，或许你会有所发现。', audio: 'audio/2.mp3' },
+        thirdLight: { text: '看看你点亮的三个数，有什么共同的数学规律？你可以继续探索，验证你的猜想。', audio: ['audio/3-1.mp3', 'audio/3-2.mp3'] },
+        fourthLight: { text: '通过9好像可以计算出这些数，如果你发现了规律，可以点击最下方的按钮。', audio: 'audio/4.mp3' },
+        fifthLight: { text: '规律好像都在9的乘法口诀里。', audio: 'audio/5.mp3' },
+        sixthLight: { text: '仔细观察这些数上面的气泡，你发现规律了吗？', audio: 'audio/6.mp3' },
+        seventhLight: { text: '这些数除以9，好像都能除得尽。', audio: 'audio/7.mp3' },
+        eighthLight: { text: '这些算出来的数，好像都是9的倍数。', audio: 'audio/8.mp3' },
         sameResult: { text: '这个结果和上次的一样，换个十位数再试试看', audio: 'audio/结果一样.mp3' },
         alreadyLight: { text: '这个结果已经被点亮过了，换一个开头不一样的两位数', audio: 'audio/被点亮过.mp3' },
         light: { audio: 'audio/点亮.mp3' }
     };
 
     let currentAudioIndex = 0;
-    let pendingAudios = [];
 
     function getRandomEmoji() {
         return randomEmojis[Math.floor(Math.random() * randomEmojis.length)];
@@ -837,7 +1257,6 @@
     function stopAudio() {
         voiceAudio.pause();
         voiceAudio.currentTime = 0;
-        pendingAudios = [];
     }
 
     function playAudio(audioPath) {
@@ -895,6 +1314,11 @@
         stopAudio();
     }
 
+    // 仅隐藏气泡文字，不打断正在播放的音频
+    function hideTipText() {
+        normalTip.classList.remove('show');
+    }
+
     function wait(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -907,12 +1331,23 @@
         };
     }
 
-    function guideInputForNextTry(message = '输入一个新的两位数') {
+    function guideInputForNextTry(message = '再试试20到99之间的数') {
         if (isFocusAnimating || focusOverlay.classList.contains('active')) return;
-        input.disabled = false;
-        input.value = '';
-        input.removeAttribute('placeholder');
-        input.focus();
+        setInputDisabled(false);
+        clearDigitInputs();
+
+        if (lightRecord.length === 0) {
+            // 首轮：预填十位为 1，锁定十位，引导填个位
+            // 小手引导由启动按钮在音频播放完后触发，不在此调用
+            inputTen.value = '1';
+            inputTen.readOnly = true;
+            cellTen.classList.add('locked');
+            inputGe.focus();
+        } else {
+            inputTen.readOnly = false;
+            cellTen.classList.remove('locked');
+            inputTen.focus();
+        }
 
         inputFixed.dataset.guide = message;
         inputFixed.classList.remove('guide-input');
@@ -928,52 +1363,181 @@
         hand.className = 'hand-guide';
         hand.textContent = '👆';
         
-        // 定位到输入框内部偏上的位置
-        const rect = inputFixed.querySelector('.box').getBoundingClientRect();
+        // 定位到十位输入框
+        const rect = cellTen.getBoundingClientRect();
         hand.style.left = `${rect.left + rect.width / 2 - 12}px`;
         hand.style.top = `${rect.top + rect.height / 2 - 15}px`;
         
         document.body.appendChild(hand);
         
-        // 移除小手的函数
         const removeHand = () => {
             hand.remove();
-            input.removeEventListener('click', removeHand);
-            input.removeEventListener('input', removeHand);
+            inputTen.removeEventListener('click', removeHand);
+            inputTen.removeEventListener('input', removeHand);
         };
         
-        // 点击输入框时移除小手
-        input.addEventListener('click', removeHand);
+        inputTen.addEventListener('click', removeHand);
+        inputTen.addEventListener('input', removeHand);
         
-        // 输入数字时移除小手
-        input.addEventListener('input', removeHand);
-        
-        // 动画结束后移除（作为备用）
-        setTimeout(() => {
-            removeHand();
-        }, 6000);
+        setTimeout(() => { removeHand(); }, 6000);
     }
 
+    function showHandGuideOnGe() {
+        document.querySelectorAll('.hand-guide').forEach(el => el.remove());
+        document.querySelectorAll('.ripple-effect').forEach(el => el.remove());
+
+        const numpad = document.getElementById('numpad');
+        const btns = numpad.querySelectorAll('.numpad-btn');
+        // 数字键盘顺序: 1,2,3,4,5,6,7,8,9,0,del
+        const btn4 = btns[3];  // 4
+        const btn5 = btns[4];  // 5
+        const btn9 = btns[8];  // 9
+        const btn0 = btns[9];  // 0
+        if (!btn4 || !btn5 || !btn9 || !btn0) return;
+
+        // 计算 4/5/9/0 的中心均值
+        const rects = [btn4, btn5, btn9, btn0].map(b => b.getBoundingClientRect());
+        const cx = rects.reduce((s, r) => s + r.left + r.width  / 2, 0) / 4;
+        const cy = rects.reduce((s, r) => s + r.top  + r.height / 2, 0) / 4;
+
+        const hand = document.createElement('div');
+        hand.className = 'hand-guide';
+        hand.textContent = '👆';
+        hand.style.cssText = `position:fixed;z-index:202;pointer-events:none;font-size:32px;transform-origin:bottom center;transition:transform 0.15s ease;`;
+        hand.style.left = `${cx - 16}px`;
+        hand.style.top  = `${cy - 32}px`;
+        document.body.appendChild(hand);
+
+        numpad.classList.add('guide-glow');
+
+        // 点击动效：缩放 + 涟漪
+        function doClick() {
+            if (!hand.isConnected) return;
+            hand.style.transform = 'scale(0.75)';
+            setTimeout(() => { if (hand.isConnected) hand.style.transform = 'scale(1)'; }, 150);
+
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple-effect';
+            ripple.style.left = `${cx - 30}px`;
+            ripple.style.top  = `${cy - 30}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 700);
+        }
+
+        // 点击动效循环 3 次，每次间隔 500ms
+        doClick();
+        const t1 = setTimeout(doClick, 500);
+        const t2 = setTimeout(doClick, 1000);
+
+        const removeHand = () => {
+            clearTimeout(t1); clearTimeout(t2);
+            hand.remove();
+            numpad.classList.remove('guide-glow');
+            document.querySelectorAll('.ripple-effect').forEach(el => el.remove());
+        };
+
+        // 1.5秒后自动消失，或用户开始操作时消失
+        const autoRemove = setTimeout(removeHand, 1500);
+        const onInteract = () => { clearTimeout(autoRemove); removeHand(); };
+        numpad.addEventListener('click', onInteract, { once: true });
+        inputGe.addEventListener('input', onInteract, { once: true });
+    }
     function hideInputGuide() {
         inputFixed.classList.remove('guide-input');
         delete inputFixed.dataset.guide;
+    }
+
+    // 创建涟漪效果
+    function createRippleEffect(centerX, centerY) {
+        // 清除之前的涟漪效果
+        document.querySelectorAll('.secret-btn-ripple').forEach(el => el.remove());
+        
+        // 创建多个涟漪圈
+        for (let i = 0; i < 3; i++) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple-effect secret-btn-ripple';
+            ripple.style.left = `${centerX - 30}px`;
+            ripple.style.top = `${centerY - 30}px`;
+            ripple.style.animationDelay = `${i * 0.3}s`;
+            ripple.style.zIndex = 250;
+            document.body.appendChild(ripple);
+            
+            // 动画结束后移除
+            setTimeout(() => {
+                ripple.remove();
+            }, 1200 + i * 300);
+        }
     }
 
 
     function hideSecretButton() {
         clearTimeout(secretBtnTimer);
         secretBtnTimer = null;
-        secretBtn.classList.remove('reveal', 'soft-breath');
-        secretBtn.style.display = 'none';
+        secretBtnRevealed = false;
+        secretBtn.classList.remove('reveal', 'soft-breath', 'flying');
+        secretBtn.style.cssText = '';
+        secretBtn.classList.add('locked');
+        secretBtn.innerHTML = '<span class="btn-icon">🔒</span>发现规律';
+    }
+
+    function unlockSecretButton() {
+        secretBtn.classList.remove('locked');
+        secretBtn.innerHTML = '<span class="btn-icon">✅</span>发现规律';
     }
 
     function revealSecretButton(delay = 0) {
+        if (secretBtnRevealed) return;
         clearTimeout(secretBtnTimer);
         secretBtnTimer = setTimeout(() => {
-            secretBtn.style.display = 'block';
-            secretBtn.classList.remove('reveal', 'soft-breath');
+            secretBtnRevealed = true;
+            secretBtn.classList.add('locked');
+            secretBtn.innerHTML = '<span class="btn-icon">✅</span>发现规律';
+
+            const finalRect = secretBtn.getBoundingClientRect();
+            const finalX = finalRect.left + finalRect.width / 2;
+            const finalY = finalRect.top + finalRect.height / 2;
+
+            secretBtn.style.visibility = 'hidden';
+            secretBtn.style.opacity = '0';
+
+            const boardRect = board.getBoundingClientRect();
+            const startX = boardRect.left + boardRect.width / 2;
+            const startY = boardRect.top + boardRect.height / 2;
+
+            secretBtn.classList.add('flying');
+            secretBtn.style.visibility = 'visible';
+            secretBtn.style.left = `${startX - secretBtn.offsetWidth / 2}px`;
+            secretBtn.style.top = `${startY - secretBtn.offsetHeight / 2}px`;
+            secretBtn.style.transform = 'scale(0.3)';
+            secretBtn.style.opacity = '0';
+            secretBtn.style.transition = 'none';
+
             void secretBtn.offsetWidth;
-            secretBtn.classList.add('reveal', 'soft-breath');
+
+            secretBtn.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease';
+            secretBtn.style.transform = 'scale(1.1)';
+            secretBtn.style.opacity = '1';
+
+            setTimeout(() => {
+                secretBtn.style.transition = [
+                    'left 0.75s cubic-bezier(0.22, 0.75, 0.25, 1)',
+                    'top 0.75s cubic-bezier(0.22, 0.75, 0.25, 1)',
+                    'transform 0.35s ease-out'
+                ].join(', ');
+                secretBtn.style.left = `${finalX - secretBtn.offsetWidth / 2}px`;
+                secretBtn.style.top = `${finalY - secretBtn.offsetHeight / 2}px`;
+                secretBtn.style.transform = 'scale(1)';
+
+                setTimeout(() => {
+                    secretBtn.classList.remove('flying');
+                    secretBtn.style.cssText = '';
+                    unlockSecretButton();
+                    secretBtn.classList.add('reveal', 'soft-breath');
+                    
+                    // 添加涟漪效果
+                    createRippleEffect(finalX, finalY);
+                }, 800);
+            }, 500);
         }, delay);
     }
 
@@ -987,6 +1551,48 @@
         return "换个十位数试试，比如20多、30多。";
     }
 
+    // 找下一个能得出 res 但十位不同且还没被点亮的区间，返回提示文字
+    // 任意两位数 n 的结果 = n - (n%10) - floor(n/10) = 9*floor(n/10)
+    // 所以结果固定为 9 的倍数，不同十位得到不同结果，这里用于提示换十位
+    // 返回 { hint: string, nextTen: number }
+    function getNextTenHint(curTen) {
+        // 找一个和 curTen 不同、还没用过的十位（1-9）
+        const usedTens = new Set(lightRecord.map(r => r / 9));
+        for (let t = 1; t <= 9; t++) {
+            if (t !== curTen && !usedTens.has(t)) {
+                return { hint: `试试输入${t}0几的数。`, nextTen: t };
+            }
+        }
+        return { hint: '你已经全部点亮了，发现数字的规律了吗？', nextTen: null };
+    }
+
+    // 用红圈效果强调矩阵上已点亮的指定格子
+    function flashLitCell(res) {
+        const el = numDomList[res - 1];
+        if (!el || !el.classList.contains('light')) return;
+        // 先移除旧圈（避免重复）
+        el.querySelectorAll('.circle-animation').forEach(c => c.remove());
+        const circle = document.createElement('div');
+        circle.className = 'circle-animation circle-flash';
+        circle.style.setProperty('--circle-delay', '0s');
+        el.appendChild(circle);
+        setTimeout(() => circle.remove(), 7200);
+    }
+
+
+    function setInputDisabled(disabled) {
+        inputTen.disabled = disabled;
+        inputGe.disabled = disabled;
+    }
+
+    function clearDigitInputs() {
+        inputTen.value = '';
+        inputGe.value = '';
+    }
+
+    function getComposedValue() {
+        return inputTen.value + inputGe.value;
+    }
 
     function showInputInvalidTip(message) {
         clearCalc();
@@ -1066,7 +1672,7 @@
         // 第三个点亮后停顿 0.5s
         await wait(500);
 
-        input.disabled = true;
+        setInputDisabled(true);
         focusOverlay.classList.add('active');
         continueExploreBtn.classList.remove('show');
         focusFlyLayer.innerHTML = '';
@@ -1113,12 +1719,12 @@
         await wait(1000);
         // 使用预录制音频
         const config = stageAudioConfig.thirdLight;
-        showTip(config.text, config.audio);
+        showTip(config.text, 'audio/3.mp3');
         continueExploreBtn.classList.add('show');
     }
 
     function removeAllCircles() {
-        document.querySelectorAll('.circle-animation').forEach(c => c.remove());
+        document.querySelectorAll('.circle-animation:not(.circle-flash)').forEach(c => c.remove());
         document.querySelectorAll('.num.pattern-focus').forEach(d => d.classList.remove('pattern-focus'));
         boardWrap.classList.remove('pattern-focus-mode');
     }
@@ -1205,7 +1811,8 @@
         const curTen = Math.floor(num / 10);
 
         if (lastTenDigit !== null && curTen === lastTenDigit) {
-            showTip(`十位一样，结果也一样。${getDifferentStartingNumberHint(curTen)}`);
+            const { hint } = getNextTenHint(curTen);
+            showTip(`十位一样，结果也一样。${hint}`);
             return;
         }
 
@@ -1257,33 +1864,74 @@
         }, 700);
     }
 
-    // 逐步展示计算过程，每步之间停顿，最后结果出现后再停顿给学生反应时间
+    // 流式逐字输出文字到某个元素
+    async function typeText(el, text, charDelay) {
+        el.textContent = '';
+        for (const ch of text) {
+            el.textContent += ch;
+            await wait(charDelay);
+        }
+    }
+
+    // 逐步展示计算过程（流式输出），每步之间停顿
     async function updateCalcAnimated(a, b, s) {
         const c1 = a - b;
         const c2 = c1 - s;
+        // 前3次用完整节奏，第4次起减半
+        const pauseDelay = lightRecord.length < 3 ? 1500 : 750;
+        const charDelay  = lightRecord.length < 3 ? 50   : 28;
 
-        // 第一步：减个位
-        boxGe.innerText = `减去个位：${a} - ${b} = ${c1}`;
+        // 第一步：减个位（流式）
         highlightBox(boxGe);
-        await wait(350);
+        await typeText(boxGe, `${a} - ${b} = ${c1}`, charDelay);
+        await wait(pauseDelay);
 
-        // 第二步：减十位
-        boxShi.innerText = `减十位：${c1} - ${s} = ${c2}`;
         highlightBox(boxShi);
-        await wait(550);
+        await typeText(boxShi, `${c1} - ${s} = ${c2}`, charDelay);
+        await wait(pauseDelay);
 
-        // 第三步：结果出现
-        resultBox.textContent = `结果：${c2}`;
         highlightBox(resultBox);
+        await typeText(resultBox, String(c2), charDelay);
 
         // 停顿，给学生看结果的时间
-        await wait(1100);
+        await wait(pauseDelay);
     }
 
-    function clearCalc() {
-        boxGe.innerText = "减去这个数的个位数字：";
-        boxShi.innerText = "减去这个数的十位数字：";
-        resultBox.textContent = "";
+        function clearCalc() {
+        boxGe.textContent = '—';
+        boxShi.textContent = '—';
+        resultBox.textContent = '';
+    }
+
+    function handleNumpadDelete() {
+        if (isResultAnimating || isFocusAnimating) return;
+        if (inputGe.value) {
+            inputGe.value = '';
+            inputGe.focus();
+        } else if (inputTen.value && !inputTen.readOnly) {
+            inputTen.value = '';
+            inputTen.focus();
+        } else if (inputTen.readOnly && inputGe.value === '') {
+            inputGe.focus();
+        }
+        hideInputGuide();
+        hideTipText();
+        clearCalc();
+    }
+
+    function handleNumpadClear() {
+        if (isResultAnimating || isFocusAnimating) return;
+        if (!inputTen.readOnly) inputTen.value = '';
+        inputGe.value = '';
+        if (inputTen.readOnly) {
+            inputTen.value = '1';
+            inputGe.focus();
+        } else {
+            inputTen.focus();
+        }
+        hideInputGuide();
+        hideTipText();
+        clearCalc();
     }
 
     async function calc(num) {
@@ -1300,7 +1948,7 @@
         // 先清空旧内容，禁用输入，开始逐步展示计算
         clearCalc();
         isResultAnimating = true;
-        input.disabled = true;
+        setInputDisabled(true);
 
         await updateCalcAnimated(num, ge, shi);
 
@@ -1308,34 +1956,50 @@
         if (lightRecord.length === 0 && res !== 9) {
             showTip("先输入10到19之间的数。");
             isResultAnimating = false;
-            input.disabled = false;
-            input.focus();
-            input.select();
+            setInputDisabled(false);
+            clearDigitInputs();
+            // 仍是首轮，重新锁定十位
+            inputTen.value = '1';
+            inputTen.readOnly = true;
+            cellTen.classList.add('locked');
+            inputGe.focus();
+            setTimeout(() => showHandGuideOnGe(), 200);
             return;
         }
 
         const isAlreadyLight = lightRecord.includes(res);
         const curTen = Math.floor(num / 10);
         
-        // 十位数字重复
-        if (lastTenDigit !== null && curTen === lastTenDigit) {
-            const config = stageAudioConfig.sameResult;
-            showTip(config.text, config.audio);
-            lastResult = res;
+        // 确保 num 和 curTen 是有效的
+        if (isNaN(num) || isNaN(curTen) || curTen < 1 || curTen > 9) {
+            showTip('输入无效，请重新输入。');
             isResultAnimating = false;
-            drawRedCircles();
+            setInputDisabled(false);
             guideInputForNextTry();
             return;
         }
         
-        // 结果已被点亮
+        // 十位数字重复（优先级更高）
+        if (lastTenDigit !== null && curTen === lastTenDigit) {
+            const { hint, nextTen } = getNextTenHint(curTen);
+            const audio = nextTen ? `audio/same_${nextTen}x.mp3` : stageAudioConfig.sameResult.audio;
+            showTip(`这个结果和上次的一样，${hint}`, audio);
+            flashLitCell(res);
+            lastResult = res;
+            isResultAnimating = false;
+            guideInputForNextTry();
+            return;
+        }
+
+        // 结果已被点亮（次优先级）
         if (isAlreadyLight) {
-            const config = stageAudioConfig.alreadyLight;
-            showTip(config.text, config.audio);
+            const { hint, nextTen } = getNextTenHint(curTen);
+            const audio = nextTen ? `audio/light_${nextTen}x.mp3` : stageAudioConfig.alreadyLight.audio;
+            showTip(`这个结果已经被点亮了，${hint}`, audio);
+            flashLitCell(res);
             lastResult = res;
             lastTenDigit = curTen;
             isResultAnimating = false;
-            drawRedCircles();
             guideInputForNextTry();
             return;
         }
@@ -1361,7 +2025,7 @@
         drawRedCircles();
 
         if (isNew && lightRecord.length === 3) {
-            input.value = '';
+            clearDigitInputs();
             playThreeNumbersFocusAnimation();
             return;
         }
@@ -1379,90 +2043,115 @@
         }
     }
 
-    input.addEventListener('beforeinput', (e) => {
-        if (isResultAnimating || isFocusAnimating) return;
+    // ── 双格输入事件 ──────────────────────────────────────
 
-        if (e.inputType && e.inputType.startsWith('delete')) return;
-        if (e.inputType === 'insertFromPaste') return;
+    // 聚焦时高亮对应格
+    [inputTen, inputGe].forEach(inp => {
+        inp.addEventListener('focus', () => {
+            cellTen.classList.toggle('focused', document.activeElement === inputTen);
+            cellGe.classList.toggle('focused', document.activeElement === inputGe);
+        });
+        inp.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (document.activeElement !== inputTen && document.activeElement !== inputGe) {
+                    cellTen.classList.remove('focused');
+                    cellGe.classList.remove('focused');
+                }
+            }, 80);
+        });
+    });
 
-        if (e.data && !/^\d$/.test(e.data)) {
-            e.preventDefault();
-            showInputInvalidTip('这里只能输入10到99的两位整数哦。');
-            return;
-        }
-
-        const selectionLength = input.selectionEnd - input.selectionStart;
-        if (e.data && input.value.length - selectionLength >= 2) {
-            e.preventDefault();
-            showInputInvalidTip('最多输入两位数，请输入10到99之间的整数。');
+    // 十位框：只接受 1-9
+    inputTen.addEventListener('keydown', (e) => {
+        if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+        if (e.key === 'Backspace' && inputTen.value === '') {
+            // 已经在十位且为空，无需跳转
         }
     });
 
-    input.addEventListener('paste', (e) => {
+    inputTen.addEventListener('input', () => {
+        if (isResultAnimating || isFocusAnimating) { inputTen.value = ''; return; }
+        hideInputGuide();
+        hideTipText();
+
+        const raw = inputTen.value.replace(/\D/g, '');
+        if (!raw) { inputTen.value = ''; return; }
+
+        const digit = raw.slice(-1);
+        if (digit === '0') {
+            inputTen.value = '';
+            showTip('十位不能是0，请输入1到9。');
+            return;
+        }
+        inputTen.value = digit;
+        inputGe.focus();
+        inputGe.select();
+    });
+
+    // 个位框：接受 0-9，退格跳回十位
+    inputGe.addEventListener('keydown', (e) => {
+        if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+        if (e.key === 'Backspace' && inputGe.value === '') {
+            e.preventDefault();
+            inputTen.focus();
+            inputTen.select();
+        }
+    });
+
+    inputGe.addEventListener('input', () => {
+        if (isResultAnimating || isFocusAnimating) { inputGe.value = ''; return; }
+        hideInputGuide();
+        hideTipText();
+
+        const raw = inputGe.value.replace(/\D/g, '');
+        if (!raw) { inputGe.value = ''; return; }
+
+        const digit = raw.slice(-1);
+        inputGe.value = digit;
+
+        if (inputTen.value) {
+            const num = Number(inputTen.value + digit);
+            calc(num);
+        }
+    });
+
+    // 点击任意格时清除引导样式
+    [inputTen, inputGe].forEach(inp => inp.addEventListener('click', hideInputGuide));
+
+    // ── 数字键盘 ──────────────────────────────────────────
+    document.getElementById('numpad').addEventListener('click', (e) => {
+        const btn = e.target.closest('.numpad-btn');
+        if (!btn) return;
         if (isResultAnimating || isFocusAnimating) return;
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData('text');
-        const cleaned = normalizeInputValue(text);
-        input.value = cleaned;
 
-        if (!cleaned) {
-            showInputInvalidTip('这里只能输入10到99的两位整数哦。');
-            return;
-        }
-
-        if (cleaned.length < 2 || !isValidTwoDigitIntegerText(cleaned)) {
-            showInputInvalidTip('请输入10到99之间的两位整数。');
-            return;
-        }
+        const digit = btn.dataset.digit;
+        if (digit === undefined) return;
 
         hideInputGuide();
-        hideTip();
-        calc(Number(cleaned));
+        hideTipText();
+
+        if (!inputTen.value) {
+            // 填十位
+            if (digit === '0') {
+                showTip('十位不能是0，请输入1到9。');
+                return;
+            }
+            inputTen.value = digit;
+            inputGe.focus();
+        } else if (!inputGe.value) {
+            // 填个位，然后触发计算
+            inputGe.value = digit;
+            const num = Number(inputTen.value + digit);
+            calc(num);
+        }
+        // 两格都满了就忽略（等计算完 guideInputForNextTry 会清空）
     });
 
-    input.addEventListener('input', () => {
-        if (isResultAnimating || isFocusAnimating) return;
-        hideInputGuide();
-        hideTip();
-
-        const raw = input.value.trim();
-        const cleaned = normalizeInputValue(raw);
-
-        if (raw !== cleaned) {
-            input.value = cleaned;
-            showInputInvalidTip('这里只能输入10到99的两位整数哦。');
-            return;
-        }
-
-        if (!cleaned) {
-            clearCalc();
-            return;
-        }
-
-        if (cleaned.length === 1) {
-            clearCalc();
-            showTip('再输入一位，组成两位数。');
-            return;
-        }
-
-        if (!isValidTwoDigitIntegerText(cleaned)) {
-            showInputInvalidTip('请输入10到99之间的两位整数。');
-            return;
-        }
-
-        calc(Number(cleaned));
-    });
-
-    input.addEventListener('blur', () => {
-        const v = input.value.trim();
-        if (v && !isValidTwoDigitIntegerText(v)) {
-            showInputInvalidTip('请输入10到99之间的两位整数。');
-        }
-    });
-
-    input.addEventListener('click', hideInputGuide);
+    document.getElementById('numpadClear').addEventListener('click', handleNumpadClear);
+    document.getElementById('numpadDel2').addEventListener('click', handleNumpadDelete);
 
     resetBtn.addEventListener('click', () => {
+        hideSecretButton();
         hideTip();
         clearTimeout(circleTimer);
 
@@ -1484,18 +2173,19 @@
 
         removeAllCircles();
 
-        input.value = '';
+        clearDigitInputs();
+        inputTen.readOnly = false;
+        cellTen.classList.remove('locked');
         lightRecord = [];
         lastTenDigit = null;
         lastResult = null;
         clearCalc();
-        hideSecretButton();
 
         focusOverlay.classList.remove('active');
         continueExploreBtn.classList.remove('show');
         focusFlyLayer.innerHTML = '';
         document.querySelectorAll('.result-fly-num').forEach(d => d.remove());
-        input.disabled = false;
+        setInputDisabled(false);
         isResultAnimating = false;
         isFocusAnimating = false;
         hasPlayedThreeNumsFocus = false;
@@ -1510,14 +2200,16 @@
     });
 
     secretBtn.addEventListener('click', () => {
+        if (secretBtn.classList.contains('locked')) return;
         showTip("太棒了，进入下一环节！");
+        g?.trackComplete();
     });
 
     continueExploreBtn.addEventListener('click', () => {
         continueExploreBtn.classList.remove('show');
         focusOverlay.classList.remove('active');
         focusFlyLayer.innerHTML = '';
-        input.disabled = false;
+        setInputDisabled(false);
         isFocusAnimating = false;
         // 新增：点击“继续探索”后给出二次引导气泡
         showTip("再试一个，验证一下你的猜想。");
@@ -1530,12 +2222,21 @@
 
         startScreen.classList.add('hidden');
         appShell.classList.add('active');
+
+        // 仅首次：音频播放到 60% 时显示小手引导个位（不等播完）
+        voiceAudio.addEventListener('timeupdate', function onFirstProgress() {
+            if (voiceAudio.duration && voiceAudio.currentTime / voiceAudio.duration >= 0.6) {
+                voiceAudio.removeEventListener('timeupdate', onFirstProgress);
+                if (lightRecord.length === 0) {
+                    showHandGuideOnGe();
+                }
+            }
+        });
+
         // 使用预录制音频
         const config = stageAudioConfig.start;
         showTip(config.text, config.audio);
         guideInputForNextTry('输入10到19之间的数');
-        // 延迟显示小手引导
-        setTimeout(showHandGuide, 800);
 
         try {
             await bgm.play();
@@ -1544,9 +2245,34 @@
         }
     });
 
-    buildBoard();
-    setInitialLight();
-    clearCalc();
+    function bootstrapApp() {
+        buildBoard();
+        setInitialLight();
+        clearCalc();
+        hideSecretButton();
+    }
+
+    if (g) {
+        const system = g.query('userId') ? 'morton' : 'ide';
+        const isEmbedded = window.self !== window.top;
+
+        if (isEmbedded) {
+            g.resize(1440, 900);
+        }
+
+        if (isEmbedded || system === 'morton') {
+            g.loading(true);
+            g.init(system, Number(g.query('unitId') || 0), { images: [] }, () => {
+                g.loading(false);
+            });
+        } else {
+            g.trackView();
+            g.trackInit();
+            g.loading(false);
+        }
+    }
+
+    bootstrapApp();
 </script>
 </body>
 </html>
