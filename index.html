@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
@@ -228,28 +228,6 @@
             opacity: 1;
             visibility: visible;
             animation: headerTipIn 0.45s ease both;
-        }
-
-        .btn-restart {
-            border: 1px solid rgba(79, 209, 197, 0.28);
-            background: rgba(30, 34, 61, 0.92);
-            color: var(--text);
-            padding: 10px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-            transition: border-color 0.2s, background 0.2s;
-            position: absolute;
-            right: 24px;
-            top: 50%;
-            transform: translateY(-50%);
-            flex-shrink: 0;
-        }
-
-        .btn-restart:hover {
-            border-color: rgba(79, 209, 197, 0.55);
-            background: rgba(40, 46, 78, 0.95);
         }
 
         @keyframes headerTipIn {
@@ -1064,7 +1042,6 @@
         <div class="header-tip-slot">
             <div class="header-tip" id="normalTip"></div>
         </div>
-        <button type="button" class="btn-restart" id="resetBtn">↻ 重新开始</button>
     </header>
 
     <div class="main-layout">
@@ -1185,7 +1162,6 @@
     const cellTen = document.getElementById('cellTen');
     const cellGe = document.getElementById('cellGe');
     const inputFixed = document.querySelector('.inputFixed');
-    const resetBtn = document.getElementById('resetBtn');
     const boxGe = document.getElementById('boxGe');
     const boxShi = document.getElementById('boxShi');
     const resultBox = document.getElementById('result');
@@ -2149,55 +2125,6 @@
 
     document.getElementById('numpadClear').addEventListener('click', handleNumpadClear);
     document.getElementById('numpadDel2').addEventListener('click', handleNumpadDelete);
-
-    resetBtn.addEventListener('click', () => {
-        hideSecretButton();
-        hideTip();
-        clearTimeout(circleTimer);
-
-        numDomList.forEach(d => {
-            d.classList.remove('light', 'animate', 'pattern-focus');
-
-            const timer = mathBubbleTimers.get(d);
-            if (timer) {
-                clearTimeout(timer);
-                mathBubbleTimers.delete(d);
-            }
-
-            const bubble = d.querySelector('.num-math-bubble');
-            if (bubble) bubble.remove();
-
-            const hoverBubble = d.querySelector('.hover-bubble');
-            if (hoverBubble) hoverBubble.remove();
-        });
-
-        removeAllCircles();
-
-        clearDigitInputs();
-        inputTen.readOnly = false;
-        cellTen.classList.remove('locked');
-        lightRecord = [];
-        lastTenDigit = null;
-        lastResult = null;
-        clearCalc();
-
-        focusOverlay.classList.remove('active');
-        continueExploreBtn.classList.remove('show');
-        focusFlyLayer.innerHTML = '';
-        document.querySelectorAll('.result-fly-num').forEach(d => d.remove());
-        setInputDisabled(false);
-        isResultAnimating = false;
-        isFocusAnimating = false;
-        hasPlayedThreeNumsFocus = false;
-        hideInputGuide();
-
-        buildBoard();
-        setInitialLight();
-        // 使用预录制音频
-        const config = stageAudioConfig.start;
-        showTip(config.text, config.audio);
-        guideInputForNextTry('输入10到19之间的数');
-    });
 
     secretBtn.addEventListener('click', () => {
         if (secretBtn.classList.contains('locked')) return;

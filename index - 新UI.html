@@ -1,0 +1,1601 @@
+﻿﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>读心术解密 - IDE Dark Mode</title>
+    <script>
+        window.inject = function (_mortonH5) {
+            window.mortonH5 = _mortonH5;
+        };
+    </script>
+    <style>
+        /* ── Xcode / IDE Dark Style 变量 ── */
+        :root {
+            /* 极客深色底板 */
+            --bg-editor: #121212;
+            --panel-bg: #1E1E1E;
+            --panel-header: #2D2D2D;
+            --keypad-bg: #181818;
+            
+            /* 边框与高亮 */
+            --border-line: #333333;
+            --border-focus: #0A84FF;
+            --shadow-drop: 0 20px 40px rgba(0, 0, 0, 0.7);
+            
+            /* 代码高亮配色 (基于 Xcode / VS Code) */
+            --code-text: #D4D4D4;       /* 普通文本白 */
+            --code-comment: #6A9955;    /* 注释绿 */
+            --code-keyword: #569CD6;    /* 关键字蓝 */
+            --code-string: #CE9178;     /* 字符串橙 */
+            --code-number: #B5CEA8;     /* 数字绿 */
+            --code-terminal: #32D74B;   /* 终端执行绿 */
+            --code-error: #FF453A;      /* 异常红 */
+            --apple-orange: #FF9F0A; 
+            
+            /* 字体栈 (强调编程等宽字体) */
+            --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC", sans-serif;
+            --font-code: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html, body {
+            min-height: 100%;
+            background-color: var(--bg-editor);
+            color: var(--code-text);
+            font-family: var(--font-ui);
+            overflow-x: hidden;
+            position: relative;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* ── Page Loading ── */
+        .page-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-editor);
+            transition: opacity 0.4s ease;
+            font-family: var(--font-code);
+            color: var(--code-terminal);
+        }
+
+        .page-loading[hidden] {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .page-loading .loading {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-line);
+            border-top: 2px solid var(--code-terminal);
+            border-radius: 50%;
+            animation: terminalSpin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes terminalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ── Start Screen ── */
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-editor);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .start-screen.hidden {
+            opacity: 0;
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .start-panel {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .start-title {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-family: var(--font-code);
+            color: var(--code-text);
+        }
+
+        .start-title::before { content: "< "; color: var(--code-keyword); }
+        .start-title::after { content: " />"; color: var(--code-keyword); }
+
+        #startBtn {
+            border: 1px solid var(--code-terminal);
+            padding: 14px 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--code-terminal);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-code);
+            background-color: rgba(50, 215, 75, 0.1);
+            transition: all 0.2s;
+        }
+
+        #startBtn:active {
+            transform: scale(0.96);
+            background-color: rgba(50, 215, 75, 0.2);
+        }
+
+        /* ── App Shell ── */
+        .app-shell {
+            display: none;
+            min-height: 100vh;
+            flex-direction: column;
+            padding-top: 70px;
+        }
+
+        .app-shell.active {
+            display: flex;
+            animation: ideFadeIn 0.5s ease both;
+        }
+
+        @keyframes ideFadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Header ── */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 24px;
+            background-color: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-line);
+            z-index: 100;
+        }
+
+        .header-tip-slot {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .header-tip {
+            font-size: 14px;
+            font-family: var(--font-code);
+            color: var(--code-comment);
+            line-height: 1.4;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .header-tip::before {
+            content: "// ";
+        }
+
+        .header-tip.show {
+            opacity: 1;
+        }
+
+        .btn-restart {
+            position: absolute;
+            right: 24px;
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            padding: 6px 12px;
+            background: #252526;
+            color: var(--code-text);
+            font-family: var(--font-code);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-restart:hover {
+            border-color: var(--code-keyword);
+            color: var(--code-keyword);
+        }
+
+        /* ── Main Layout ── */
+        .main-layout {
+            flex: 1;
+            display: flex;
+            gap: 24px;
+            padding: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        /* ── Mac IDE Window Base Style ── */
+        .mac-window {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-line);
+            box-shadow: var(--shadow-drop);
+            position: relative;
+            padding-top: 36px; /* 为交通灯留出空间 */
+        }
+        
+        .mac-window::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 28px;
+            background: var(--panel-header);
+            border-bottom: 1px solid var(--border-line);
+            border-radius: 10px 10px 0 0;
+        }
+        
+        /* 红黄绿交通灯 */
+        .mac-window::after {
+            content: '';
+            position: absolute;
+            top: 10px; left: 12px;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #FF5F56;
+            box-shadow: 18px 0 0 #FFBD2E, 36px 0 0 #27C93F;
+            z-index: 2;
+        }
+
+        /* ── Sidebar (Inspector) ── */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            padding: 48px 20px 24px; /* 包括 window 头部的额外空间 */
+        }
+
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-code);
+            font-size: 12px;
+            color: var(--code-keyword);
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-title::before { content: "function "; color: var(--code-keyword); }
+        .sidebar-title::after { content: "() {"; color: var(--code-text); }
+
+        /* ── Input Area ── */
+        .inputFixed {
+            position: relative;
+            margin-bottom: 8px;
+            margin-left: 12px; /* 模拟代码缩进 */
+            border-left: 1px solid var(--border-line);
+            padding-left: 12px;
+        }
+
+        .digit-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .digit-sep { display: none; }
+
+        .digit-cell {
+            width: 60px;
+            height: 70px;
+            border-radius: 6px;
+            background-color: #111;
+            border: 1px solid var(--border-line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .digit-cell.focused {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
+        }
+
+        .digit-cell.locked {
+            opacity: 0.5;
+            background-color: #000;
+        }
+
+        .digit-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-size: 36px;
+            font-weight: 600;
+            font-family: var(--font-code);
+            background: transparent;
+            color: var(--code-number);
+            caret-color: var(--code-terminal);
+        }
+
+        .digit-label {
+            position: absolute;
+            bottom: -18px;
+            font-size: 10px;
+            font-family: var(--font-code);
+            color: var(--code-comment);
+            pointer-events: none;
+        }
+
+        /* ── Calc Section (Console Log Style) ── */
+        .calc-wrapper {
+            margin-left: 12px;
+            padding-left: 12px;
+            border-left: 1px solid var(--border-line);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .calc-section {
+            display: flex;
+            align-items: center;
+            background: #111;
+            border: 1px solid var(--border-line);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: var(--font-code);
+            transition: all 0.2s ease;
+        }
+
+        .calc-label {
+            font-size: 12px;
+            color: var(--code-keyword);
+            width: 65px; /* 对齐 */
+            flex-shrink: 0;
+        }
+        
+        #boxGe-label::before { content: "var c1 = "; }
+        #boxShi-label::before { content: "var c2 = "; }
+        #result-label { color: #C586C0; } /* Purple for return */
+        #result-label::before { content: "return "; }
+
+        .box {
+            color: var(--code-string);
+            font-size: 14px;
+            background: transparent;
+            border: none;
+            flex: 1;
+            text-align: left;
+            padding-left: 8px;
+            white-space: nowrap;
+        }
+        
+        #result {
+            color: var(--code-terminal);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 闭合括号模拟 */
+        .sidebar-footer {
+            font-family: var(--font-code);
+            font-size: 12px;
+            color: var(--code-text);
+            margin-top: 4px;
+        }
+
+        /* ── Numpad (Mechanical / Terminal Keys) ── */
+        .flow-keypad {
+            margin-top: 10px;
+            background-color: var(--keypad-bg);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid var(--border-line);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .numpad-btn[data-digit="1"] { grid-column: 1; grid-row: 1; }
+        .numpad-btn[data-digit="2"] { grid-column: 2; grid-row: 1; }
+        .numpad-btn[data-digit="3"] { grid-column: 3; grid-row: 1; }
+        .numpad-btn[data-digit="4"] { grid-column: 1; grid-row: 2; }
+        .numpad-btn[data-digit="5"] { grid-column: 2; grid-row: 2; }
+        .numpad-btn[data-digit="6"] { grid-column: 3; grid-row: 2; }
+        .numpad-btn[data-digit="7"] { grid-column: 1; grid-row: 3; }
+        .numpad-btn[data-digit="8"] { grid-column: 2; grid-row: 3; }
+        .numpad-btn[data-digit="9"] { grid-column: 3; grid-row: 3; }
+        .numpad-btn[data-digit="0"] { grid-column: 2; grid-row: 4; }
+
+        .numpad-btn {
+            height: 48px;
+            background: #252526;
+            border: 1px solid #3E3E42;
+            border-bottom: 2px solid #000;
+            border-radius: 6px;
+            color: var(--code-text);
+            font-size: 20px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .numpad-btn:active {
+            background: #2D2D30;
+            border-bottom-width: 1px;
+            transform: translateY(1px);
+        }
+
+        .numpad-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .numpad-btn.clear-btn,
+        .numpad-btn.del-btn {
+            background: #333;
+            border-color: #444;
+            color: #DDD;
+            font-size: 14px;
+        }
+        
+        .numpad-btn.del-btn { color: var(--code-error); }
+        .numpad-btn.del-btn svg { margin-right: 4px; }
+
+        /* ── Board Panel (Matrix Array) ── */
+        .board-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 760px;
+        }
+
+        .boardWrap {
+            padding: 48px 24px 24px; /* mac-window 继承 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 核心修正：11列 x 9行 = 完美矩阵 */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr); 
+            gap: 4px;
+            width: 100%;
+        }
+
+        .num {
+            aspect-ratio: 1;
+            background-color: #111;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-family: var(--font-code);
+            color: #555;
+            border: 1px solid #222;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .num span {
+            font-size: 10px;
+            margin-top: 2px;
+            filter: grayscale(1) opacity(0.3);
+        }
+
+        .num.light {
+            background-color: rgba(50, 215, 75, 0.1) !important;
+            color: var(--code-terminal) !important;
+            border-color: rgba(50, 215, 75, 0.4);
+            box-shadow: 0 0 10px rgba(50, 215, 75, 0.2), inset 0 0 5px rgba(50, 215, 75, 0.1);
+            z-index: 2;
+        }
+        
+        .num.light span {
+            filter: grayscale(0) opacity(1);
+        }
+
+        /* ── Action & Hints ── */
+        .secret-btn-slot {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        #secretBtn {
+            border: 1px solid var(--border-line);
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #111;
+        }
+
+        #secretBtn.locked {
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        #secretBtn.reveal {
+            background-color: rgba(10, 132, 255, 0.15);
+            color: var(--border-focus);
+            border-color: var(--border-focus);
+            box-shadow: 0 0 15px rgba(10, 132, 255, 0.3);
+        }
+
+        #secretBtn.reveal:active {
+            transform: scale(0.96);
+        }
+
+        /* ── Animations & Overlays ── */
+        .circle-animation {
+            position: absolute;
+            inset: -3px;
+            border-radius: 8px;
+            border: 1px dashed var(--apple-orange);
+            pointer-events: none;
+            z-index: 10;
+            animation: ideBorderDash 0.5s ease-out forwards;
+        }
+        
+        .num.pattern-focus { border-color: var(--apple-orange); color: var(--apple-orange) !important;}
+
+        @keyframes ideBorderDash {
+            0% { transform: scale(0.8); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Code-style tooltip */
+        .num-math-bubble {
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 6px);
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #252526;
+            color: var(--code-keyword);
+            font-size: 11px;
+            font-family: var(--font-code);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 20;
+            animation: appleTooltip 0.3s ease;
+            border: 1px solid var(--border-line);
+        }
+
+        @keyframes appleTooltip {
+            from { opacity: 0; transform: translate(-50%, 5px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .focus-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .focus-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .fly-num, .result-fly-num {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-family: var(--font-code);
+            color: #000;
+            background-color: var(--code-terminal);
+            box-shadow: 0 0 20px rgba(50, 215, 75, 0.4);
+            z-index: 600;
+            pointer-events: none;
+        }
+
+        #continueExploreBtn {
+            position: fixed;
+            left: 50%;
+            bottom: 15%;
+            transform: translateX(-50%);
+            border: 1px solid var(--code-terminal);
+            padding: 12px 28px;
+            border-radius: 4px;
+            font-size: 15px;
+            font-family: var(--font-code);
+            color: var(--code-terminal);
+            background-color: rgba(0,0,0,0.8);
+            cursor: pointer;
+            z-index: 700;
+            display: none;
+            transition: transform 0.2s;
+        }
+        
+        #continueExploreBtn:active {
+            transform: translate(-50%, 0) scale(0.96);
+        }
+
+        #continueExploreBtn.show { display: block; animation: ideFadeIn 0.5s ease;}
+
+        .num.light .hover-bubble {
+            display: none;
+            position: absolute;
+            inset: -1px;
+            background-color: rgba(30, 30, 30, 0.95);
+            border-radius: 6px;
+            color: var(--code-keyword);
+            font-size: 11px;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            border: 1px solid var(--border-line);
+        }
+
+        .num.light:hover .hover-bubble { display: flex; }
+        
+        .hand-guide, .ripple-effect, .inputFixed.guide-input::before, .inputFixed.guide-input::after, .num.light.animate { display: none !important; }
+        
+        .inputFixed.guide-input .digit-cell {
+            border-color: rgba(50, 215, 75, 0.6);
+            animation: ideInputPulse 1.5s infinite;
+        }
+        
+        @keyframes ideInputPulse {
+            0% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0.2); }
+            70% { box-shadow: 0 0 0 4px rgba(50, 215, 75, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0); }
+        }
+
+    </style>
+</head>
+<body>
+<div id="app">
+<div class="start-screen" id="startScreen">
+    <div class="start-panel">
+        <h1 class="start-title">Morton_Decode</h1>
+        <button id="startBtn">Run Script</button>
+    </div>
+</div>
+
+<div class="app-shell" id="appShell">
+    <header class="app-header">
+        <div class="header-tip-slot">
+            <div class="header-tip" id="normalTip"></div>
+        </div>
+        <button type="button" class="btn-restart" id="resetBtn">↻ REBOOT</button>
+    </header>
+
+    <div class="main-layout">
+        <!-- 侧边栏：Inspector 面板 -->
+        <aside class="sidebar mac-window">
+            <div class="flow">
+                <div class="sidebar-title">initDecode</div>
+                
+                <div class="inputFixed">
+                    <div class="digit-inputs">
+                        <div class="digit-cell" id="cellTen">
+                            <input type="tel" id="inputTen" inputmode="numeric" maxlength="1" autocomplete="off" />
+                            <span class="digit-label">Ten</span>
+                        </div>
+                        <span class="digit-sep">·</span>
+                        <div class="digit-cell" id="cellGe">
+                            <input type="tel" id="inputGe" inputmode="numeric" maxlength="1" autocomplete="off" />
+                            <span class="digit-label">Unit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 计算区域转为 Console 风格 -->
+                <div class="calc-wrapper">
+                    <div class="calc-section">
+                        <div class="calc-label" id="boxGe-label"></div>
+                        <div class="box" id="boxGe">_</div>
+                    </div>
+                    <div class="calc-section">
+                        <div class="calc-label" id="boxShi-label"></div>
+                        <div class="box" id="boxShi">_</div>
+                    </div>
+                    <div class="calc-section">
+                        <div class="calc-label" id="result-label"></div>
+                        <div class="box" id="result"></div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-footer">}</div>
+
+                <div class="flow-keypad">
+                    <div class="numpad" id="numpad">
+                        <button type="button" class="numpad-btn" data-digit="1">1</button>
+                        <button type="button" class="numpad-btn" data-digit="2">2</button>
+                        <button type="button" class="numpad-btn" data-digit="3">3</button>
+                        <button type="button" class="numpad-btn" data-digit="4">4</button>
+                        <button type="button" class="numpad-btn" data-digit="5">5</button>
+                        <button type="button" class="numpad-btn" data-digit="6">6</button>
+                        <button type="button" class="numpad-btn" data-digit="7">7</button>
+                        <button type="button" class="numpad-btn" data-digit="8">8</button>
+                        <button type="button" class="numpad-btn" data-digit="9">9</button>
+                        <button type="button" class="numpad-btn" data-digit="0">0</button>
+                    </div>
+                    <div class="numpad-actions">
+                        <button type="button" class="numpad-btn clear-btn" id="numpadClear">CLR</button>
+                        <button type="button" class="numpad-btn del-btn" id="numpadDel2">
+                            <svg class="del-icon" viewBox="0 0 24 24" width="14" height="14">
+                                <path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/>
+                            </svg>
+                            DEL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主网格区 Array Matrix -->
+        <section class="board-panel">
+            <div class="boardWrap mac-window">
+                <div class="board" id="board"></div>
+                
+                <div class="secret-btn-slot">
+                    <button type="button" id="secretBtn" class="locked">
+                        <span class="btn-icon">🔒</span> Execute Pattern
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="focus-overlay" id="focusOverlay">
+    <div class="focus-fly-layer" id="focusFlyLayer"></div>
+    <button id="continueExploreBtn">Continue</button>
+</div>
+</div>
+
+<div class="page-loading">
+    <div class="loading"></div>
+    <span>Compiling Scripts...</span>
+</div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<audio id="voiceAudio" preload="auto"></audio>
+<audio id="effectAudio" preload="auto"></audio>
+
+<script src="mzone-global.2026-05-28.js"></script>
+<script>
+    // JS 逻辑不变，仅匹配了 UI 显示效果所需的时间和挂载行为
+    const mzoneSdk = window.MzoneGlobal?.default || window.MzoneGlobal;
+    const { Global } = mzoneSdk || {};
+    const g = Global ? new Global('learning_class_gene_msg_h5') : null;
+
+    const board = document.getElementById('board');
+    const boardWrap = document.querySelector('.boardWrap');
+    const appShell = document.getElementById('appShell');
+    const startScreen = document.getElementById('startScreen');
+    const startBtn = document.getElementById('startBtn');
+    const bgm = document.getElementById('bgm');
+    const voiceAudio = document.getElementById('voiceAudio');
+    const effectAudio = document.getElementById('effectAudio');
+    const secretBtn = document.getElementById('secretBtn');
+    const normalTip = document.getElementById('normalTip');
+    const inputTen = document.getElementById('inputTen');
+    const inputGe = document.getElementById('inputGe');
+    const cellTen = document.getElementById('cellTen');
+    const cellGe = document.getElementById('cellGe');
+    const inputFixed = document.querySelector('.inputFixed');
+    const resetBtn = document.getElementById('resetBtn');
+    const boxGe = document.getElementById('boxGe');
+    const boxShi = document.getElementById('boxShi');
+    const resultBox = document.getElementById('result');
+
+    const focusOverlay = document.getElementById('focusOverlay');
+    const focusFlyLayer = document.getElementById('focusFlyLayer');
+    const continueExploreBtn = document.getElementById('continueExploreBtn');
+
+    let numDomList = [];
+    let lightRecord = [];
+    let lastTenDigit = null;
+    let lastResult = null;
+    let circleTimer = null;
+    let hasStarted = false;
+    let isResultAnimating = false;
+    let isFocusAnimating = false;
+    let hasPlayedThreeNumsFocus = false;
+    let secretBtnTimer = null;
+    let secretBtnRevealed = false;
+
+    const mathBubbleTimers = new WeakMap();
+
+    const lionNums = new Set([9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99]);
+    const randomEmojis = ["🐹", "🍎", "🍊", "⭐", "🐶", "🌸", "🐮", "🔥", "🌈", "✨", "💡", "🦁"];
+
+    bgm.volume = 0.14;
+
+    const stageAudioConfig = {
+        start: { text: '先输入一个10到19之间的两位数，看看会得到什么结果。', audio: 'audio/0.mp3' },
+        firstLight: { text: '很好，接下来试试其他两位数，20到99都可以。', audio: 'audio/1.mp3' },
+        secondLight: { text: '再尝试输入一个新的两位数，或许你会有所发现。', audio: 'audio/2.mp3' },
+        thirdLight: { text: '看看你点亮的三个数，有什么共同的数学规律？你可以继续探索，验证你的猜想。', audio: ['audio/3-1.mp3', 'audio/3-2.mp3'] },
+        fourthLight: { text: '通过9好像可以计算出这些数，如果你发现了规律，可以点击最下方的按钮。', audio: 'audio/4.mp3' },
+        fifthLight: { text: '规律好像都在9的乘法口诀里。', audio: 'audio/5.mp3' },
+        sixthLight: { text: '仔细观察这些数上面的气泡，你发现规律了吗？', audio: 'audio/6.mp3' },
+        seventhLight: { text: '这些数除以9，好像都能除得尽。', audio: 'audio/7.mp3' },
+        eighthLight: { text: '这些算出来的数，好像都是9的倍数。', audio: 'audio/8.mp3' },
+        sameResult: { text: '这个结果和上次的一样，换个十位数再试试看', audio: 'audio/结果一样.mp3' },
+        alreadyLight: { text: '这个结果已经被点亮过了，换一个开头不一样的两位数', audio: 'audio/被点亮过.mp3' },
+        light: { audio: 'audio/点亮.mp3' }
+    };
+
+    let currentAudioIndex = 0;
+
+    function getRandomEmoji() {
+        return randomEmojis[Math.floor(Math.random() * randomEmojis.length)];
+    }
+
+    function buildBoard() {
+        board.innerHTML = '';
+        numDomList = [];
+        for (let i = 1; i <= 99; i++) {
+            const d = document.createElement('div');
+            d.className = 'num';
+            const emoji = lionNums.has(i) ? "🦁" : getRandomEmoji();
+            d.innerHTML = `${i}<span>${emoji}</span>`;
+            d.dataset.val = i;
+            board.appendChild(d);
+            numDomList.push(d);
+        }
+    }
+
+    function setInitialLight() { lightRecord = []; }
+
+    function stopAudio() {
+        voiceAudio.pause();
+        voiceAudio.currentTime = 0;
+    }
+
+    function playAudio(audioPath) {
+        voiceAudio.src = audioPath;
+        voiceAudio.volume = 0.95;
+        voiceAudio.play().catch(e => console.log('音频播放失败:', e));
+    }
+
+    function playEffect(audioPath) {
+        effectAudio.src = audioPath;
+        effectAudio.volume = 0.8;
+        effectAudio.play().catch(e => console.log('音效播放失败:', e));
+    }
+
+    async function playAudiosSequentially(audioPaths) {
+        for (let i = 0; i < audioPaths.length; i++) {
+            playAudio(audioPaths[i]);
+            await new Promise(resolve => {
+                const onEnded = () => {
+                    voiceAudio.removeEventListener('ended', onEnded);
+                    resolve();
+                };
+                voiceAudio.addEventListener('ended', onEnded);
+            });
+        }
+    }
+
+    function showTip(t, audio = null) {
+        stopAudio();
+        normalTip.innerText = t;
+        normalTip.classList.remove('show');
+        void normalTip.offsetWidth;
+        normalTip.classList.add('show');
+        if (audio) {
+            if (Array.isArray(audio)) playAudiosSequentially(audio);
+            else playAudio(audio);
+        }
+    }
+
+    function hideTip() {
+        normalTip.classList.remove('show');
+        stopAudio();
+    }
+
+    function hideTipText() {
+        normalTip.classList.remove('show');
+    }
+
+    function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    function getCellCenter(el) {
+        const rect = el.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+
+    function guideInputForNextTry(message = '再试试20到99之间的数') {
+        if (isFocusAnimating || focusOverlay.classList.contains('active')) return;
+        setInputDisabled(false);
+        clearDigitInputs();
+
+        if (lightRecord.length === 0) {
+            inputTen.value = '1';
+            inputTen.readOnly = true;
+            cellTen.classList.add('locked');
+            inputGe.focus();
+        } else {
+            inputTen.readOnly = false;
+            cellTen.classList.remove('locked');
+            inputTen.focus();
+        }
+
+        inputFixed.classList.remove('guide-input');
+        void inputFixed.offsetWidth;
+        inputFixed.classList.add('guide-input');
+    }
+
+    function hideInputGuide() { inputFixed.classList.remove('guide-input'); }
+
+    function hideSecretButton() {
+        clearTimeout(secretBtnTimer);
+        secretBtnTimer = null;
+        secretBtnRevealed = false;
+        secretBtn.classList.remove('reveal', 'soft-breath', 'flying');
+        secretBtn.style.cssText = '';
+        secretBtn.classList.add('locked');
+        secretBtn.innerHTML = '<span class="btn-icon">🔒</span> Execute Pattern';
+    }
+
+    function unlockSecretButton() {
+        secretBtn.classList.remove('locked');
+        secretBtn.innerHTML = '<span class="btn-icon">✅</span> Execute Pattern';
+    }
+
+    function revealSecretButton(delay = 0) {
+        if (secretBtnRevealed) return;
+        clearTimeout(secretBtnTimer);
+        secretBtnTimer = setTimeout(() => {
+            secretBtnRevealed = true;
+            secretBtn.classList.add('locked');
+            secretBtn.innerHTML = '<span class="btn-icon">✅</span> Execute Pattern';
+
+            const finalRect = secretBtn.getBoundingClientRect();
+            const finalX = finalRect.left + finalRect.width / 2;
+            const finalY = finalRect.top + finalRect.height / 2;
+
+            secretBtn.style.visibility = 'hidden';
+            secretBtn.style.opacity = '0';
+
+            const boardRect = board.getBoundingClientRect();
+            const startX = boardRect.left + boardRect.width / 2;
+            const startY = boardRect.top + boardRect.height / 2;
+
+            secretBtn.classList.add('flying');
+            secretBtn.style.visibility = 'visible';
+            secretBtn.style.position = 'fixed';
+            secretBtn.style.zIndex = '1000';
+            secretBtn.style.left = `${startX - secretBtn.offsetWidth / 2}px`;
+            secretBtn.style.top = `${startY - secretBtn.offsetHeight / 2}px`;
+            secretBtn.style.transform = 'scale(0.3)';
+            secretBtn.style.opacity = '0';
+            secretBtn.style.transition = 'none';
+
+            void secretBtn.offsetWidth;
+
+            secretBtn.style.transition = 'transform 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.3s ease';
+            secretBtn.style.transform = 'scale(1.1)';
+            secretBtn.style.opacity = '1';
+
+            setTimeout(() => {
+                secretBtn.style.transition = [
+                    'left 0.8s cubic-bezier(0.23, 1, 0.32, 1)',
+                    'top 0.8s cubic-bezier(0.23, 1, 0.32, 1)',
+                    'transform 0.5s ease-out'
+                ].join(', ');
+                secretBtn.style.left = `${finalX - secretBtn.offsetWidth / 2}px`;
+                secretBtn.style.top = `${finalY - secretBtn.offsetHeight / 2}px`;
+                secretBtn.style.transform = 'scale(1)';
+
+                setTimeout(() => {
+                    secretBtn.classList.remove('flying');
+                    secretBtn.style.cssText = '';
+                    unlockSecretButton();
+                    secretBtn.classList.add('reveal');
+                }, 800);
+            }, 500);
+        }, delay);
+    }
+
+    function getNextTenHint(curTen) {
+        const usedTens = new Set(lightRecord.map(r => r / 9));
+        for (let t = 1; t <= 9; t++) {
+            if (t !== curTen && !usedTens.has(t)) {
+                return { hint: `试试输入${t}0几的数。`, nextTen: t };
+            }
+        }
+        return { hint: '你已经全部点亮了，发现数字的规律了吗？', nextTen: null };
+    }
+
+    function flashLitCell(res) {
+        const el = numDomList[res - 1];
+        if (!el || !el.classList.contains('light')) return;
+        el.querySelectorAll('.circle-animation').forEach(c => c.remove());
+        const circle = document.createElement('div');
+        circle.className = 'circle-animation circle-flash';
+        el.appendChild(circle);
+        setTimeout(() => circle.remove(), 2000);
+    }
+
+    function setInputDisabled(disabled) {
+        inputTen.disabled = disabled;
+        inputGe.disabled = disabled;
+        const keys = document.querySelectorAll('.numpad-btn');
+        keys.forEach(k => k.style.pointerEvents = disabled ? 'none' : 'auto');
+    }
+
+    function clearDigitInputs() {
+        inputTen.value = '';
+        inputGe.value = '';
+    }
+
+    async function animateResultToCell(num, targetEl) {
+        const from = getCellCenter(resultBox);
+        const to = getCellCenter(targetEl);
+        const fly = document.createElement('div');
+        fly.className = 'result-fly-num';
+        fly.textContent = num;
+        fly.style.left = `${from.x - 20}px`;
+        fly.style.top = `${from.y - 20}px`;
+        document.body.appendChild(fly);
+
+        playEffect(stageAudioConfig.light.audio);
+
+        const animation = fly.animate(
+            [
+                { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                { transform: `translate(${to.x - from.x}px, ${to.y - from.y}px) scale(0.7)`, opacity: 0.8 }
+            ],
+            { duration: 800, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' }
+        );
+
+        try { await animation.finished; } catch (e) {}
+        fly.remove();
+    }
+
+    function lightResultCell(el) {
+        el.classList.remove('animate');
+        void el.offsetWidth;
+        el.classList.add('light');
+
+        const val = Number(el.dataset.val);
+        if (val % 9 === 0) {
+            const existing = el.querySelector('.hover-bubble');
+            if (!existing) {
+                const hb = document.createElement('div');
+                hb.className = 'hover-bubble';
+                hb.textContent = `${val / 9} * 9`;
+                el.appendChild(hb);
+            }
+        }
+    }
+
+    async function playThreeNumbersFocusAnimation() {
+        if (isFocusAnimating || hasPlayedThreeNumsFocus || lightRecord.length < 3) return;
+
+        isFocusAnimating = true;
+        hasPlayedThreeNumsFocus = true;
+
+        await wait(500);
+
+        setInputDisabled(true);
+        focusOverlay.classList.add('active');
+        continueExploreBtn.classList.remove('show');
+        focusFlyLayer.innerHTML = '';
+
+        const nums = lightRecord.slice(0, 3).sort((a, b) => a - b);
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const targetOffsets = [-120, 0, 120]; 
+
+        for (let i = 0; i < nums.length; i++) {
+            const n = nums[i];
+            const sourceEl = numDomList[n - 1];
+            if (!sourceEl) continue;
+
+            const from = getCellCenter(sourceEl);
+            const to = { x: centerX + targetOffsets[i], y: centerY };
+
+            const fly = document.createElement('div');
+            fly.className = 'fly-num';
+            fly.textContent = n;
+            fly.style.left = `${from.x - 20}px`;
+            fly.style.top = `${from.y - 20}px`;
+            focusFlyLayer.appendChild(fly);
+
+            fly.animate(
+                [
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    { transform: `translate(${to.x - from.x}px, ${to.y - from.y}px) scale(1.8)`, opacity: 1 }
+                ],
+                { duration: 1000, easing: 'cubic-bezier(0.18, 0.89, 0.32, 1.28)', fill: 'forwards' }
+            );
+            await wait(200);
+        }
+
+        await wait(1000);
+        const config = stageAudioConfig.thirdLight;
+        showTip(config.text, 'audio/3.mp3');
+        continueExploreBtn.classList.add('show');
+    }
+
+    function removeAllCircles() {
+        document.querySelectorAll('.circle-animation:not(.circle-flash)').forEach(c => c.remove());
+        document.querySelectorAll('.num.pattern-focus').forEach(d => d.classList.remove('pattern-focus'));
+    }
+
+    function drawRedCircles() {
+        clearTimeout(circleTimer);
+        removeAllCircles();
+
+        if (lightRecord.length >= 4) {
+            lightRecord.slice().sort((a, b) => a - b).forEach((num, index) => {
+                const el = numDomList[num - 1];
+                if (!el) return;
+                el.classList.add('pattern-focus');
+                const circle = document.createElement('div');
+                circle.className = 'circle-animation';
+                circle.style.animationDelay = `${index * 0.1}s`; 
+                el.appendChild(circle);
+            });
+            circleTimer = setTimeout(removeAllCircles, 7000); 
+        }
+    }
+
+    function showMathBubble(el, num) {
+        const cnt = lightRecord.length;
+        if (cnt < 6 || num === 9 || !el || num % 9 !== 0) return;
+
+        const oldBubble = el.querySelector('.num-math-bubble');
+        if (oldBubble) oldBubble.remove();
+
+        const bubble = document.createElement('div');
+        bubble.className = 'num-math-bubble';
+        bubble.textContent = `${num / 9} * 9`;
+        el.appendChild(bubble);
+
+        setTimeout(() => { if(bubble.parentNode) bubble.remove(); }, 3000);
+    }
+
+    function showAllExistingBubblesAtFive() {
+        if (lightRecord.length !== 6) return;
+        lightRecord.forEach(num => {
+            const el = numDomList[num - 1];
+            if (!el || num % 9 !== 0) return;
+
+            const oldBubble = el.querySelector('.num-math-bubble');
+            if (oldBubble) oldBubble.remove();
+
+            const bubble = document.createElement('div');
+            bubble.className = 'num-math-bubble';
+            bubble.textContent = num === 9 ? '1 * 9' : `${num / 9} * 9`;
+            el.appendChild(bubble);
+
+            setTimeout(() => { if(bubble.parentNode) bubble.remove(); }, 4000);
+        });
+    }
+
+    function updateTip(num) {
+        const curTen = Math.floor(num / 10);
+        if (lastTenDigit !== null && curTen === lastTenDigit) {
+            const { hint } = getNextTenHint(curTen);
+            showTip(`十位一样，结果也一样。${hint}`);
+            return;
+        }
+
+        const cnt = lightRecord.length;
+        if (cnt === 4) revealSecretButton(2600);
+        else if (cnt > 4) revealSecretButton(0);
+
+        if (cnt === 1) showTip(stageAudioConfig.firstLight.text, stageAudioConfig.firstLight.audio);
+        else if (cnt === 2) showTip(stageAudioConfig.secondLight.text, stageAudioConfig.secondLight.audio);
+        else if (cnt === 4) showTip(stageAudioConfig.fourthLight.text, stageAudioConfig.fourthLight.audio);
+        else if (cnt === 5) showTip(stageAudioConfig.fifthLight.text, stageAudioConfig.fifthLight.audio);
+        else if (cnt === 6) showTip(stageAudioConfig.sixthLight.text, stageAudioConfig.sixthLight.audio);
+        else if (cnt === 7) showTip(stageAudioConfig.seventhLight.text, stageAudioConfig.seventhLight.audio);
+        else if (cnt === 8) showTip(stageAudioConfig.eighthLight.text, stageAudioConfig.eighthLight.audio);
+        else if (cnt >= 9) showTip("你已经找到规律了！点击下方按钮继续。");
+    }
+
+    function highlightBox(el) {
+        el.style.transition = 'all 0.2s ease';
+        el.style.borderColor = 'var(--code-terminal)';
+        el.style.backgroundColor = 'rgba(50, 215, 75, 0.1)';
+        setTimeout(() => {
+            el.style.borderColor = '';
+            el.style.backgroundColor = '';
+        }, 300);
+    }
+
+    async function typeText(el, text, charDelay) {
+        el.textContent = '';
+        for (const ch of text) {
+            el.textContent += ch;
+            await wait(charDelay);
+        }
+    }
+
+    async function updateCalcAnimated(a, b, s) {
+        const c1 = a - b;
+        const c2 = c1 - s;
+        const pauseDelay = lightRecord.length < 3 ? 1000 : 500;
+        const charDelay  = lightRecord.length < 3 ? 30   : 15;
+
+        highlightBox(boxGe.parentElement);
+        await typeText(boxGe, `${a} - ${b}; // ${c1}`, charDelay);
+        await wait(pauseDelay);
+
+        highlightBox(boxShi.parentElement);
+        await typeText(boxShi, `${c1} - ${s}; // ${c2}`, charDelay);
+        await wait(pauseDelay);
+
+        highlightBox(resultBox.parentElement);
+        await typeText(resultBox, `${c2};`, charDelay); 
+        await wait(pauseDelay);
+    }
+
+    function clearCalc() {
+        boxGe.textContent = '_';
+        boxShi.textContent = '_';
+        resultBox.textContent = '';
+    }
+
+    function handleNumpadDelete() {
+        if (isResultAnimating || isFocusAnimating) return;
+        if (inputGe.value) {
+            inputGe.value = '';
+            inputGe.focus();
+        } else if (inputTen.value && !inputTen.readOnly) {
+            inputTen.value = '';
+            inputTen.focus();
+        } else if (inputTen.readOnly && inputGe.value === '') {
+            inputGe.focus();
+        }
+        hideTipText();
+        clearCalc();
+    }
+
+    function handleNumpadClear() {
+        if (isResultAnimating || isFocusAnimating) return;
+        if (!inputTen.readOnly) inputTen.value = '';
+        inputGe.value = '';
+        if (inputTen.readOnly) {
+            inputTen.value = '1';
+            inputGe.focus();
+        } else {
+            inputTen.focus();
+        }
+        hideTipText();
+        clearCalc();
+    }
+
+    async function calc(num) {
+        if (isResultAnimating || isFocusAnimating) return;
+        if (!Number.isInteger(num) || num < 10 || num > 99) {
+            showTip('请输入10到99之间的两位整数。'); 
+            clearCalc();
+            clearDigitInputs();
+            guideInputForNextTry();
+            return;
+        }
+
+        const ge = num % 10;
+        const shi = Math.floor(num / 10);
+        const res = num - ge - shi;
+
+        hideInputGuide();
+        clearCalc();
+        isResultAnimating = true;
+        setInputDisabled(true);
+
+        await updateCalcAnimated(num, ge, shi);
+
+        if (lightRecord.length === 0 && res !== 9) {
+            showTip("先输入10到19之间的数。");
+            isResultAnimating = false;
+            setInputDisabled(false);
+            clearDigitInputs();
+            inputTen.value = '1';
+            inputTen.readOnly = true;
+            cellTen.classList.add('locked');
+            inputGe.focus();
+            return;
+        }
+
+        const isAlreadyLight = lightRecord.includes(res);
+        const curTen = Math.floor(num / 10);
+        
+        if (isNaN(num) || isNaN(curTen) || curTen < 1 || curTen > 9) {
+            showTip('输入无效，请重新输入。');
+            isResultAnimating = false;
+            setInputDisabled(false);
+            guideInputForNextTry();
+            return;
+        }
+        
+        if (lastTenDigit !== null && curTen === lastTenDigit) {
+            const { hint, nextTen } = getNextTenHint(curTen);
+            const audio = nextTen ? `audio/same_${nextTen}x.mp3` : stageAudioConfig.sameResult.audio;
+            showTip(`这个结果和上次的一样，${hint}`, audio);
+            flashLitCell(res);
+            lastResult = res;
+            isResultAnimating = false;
+            guideInputForNextTry();
+            return;
+        }
+
+        if (isAlreadyLight) {
+            const { hint, nextTen } = getNextTenHint(curTen);
+            const audio = nextTen ? `audio/light_${nextTen}x.mp3` : stageAudioConfig.alreadyLight.audio;
+            showTip(`这个结果已经被点亮了，${hint}`, audio);
+            flashLitCell(res);
+            lastResult = res;
+            lastTenDigit = curTen;
+            isResultAnimating = false;
+            guideInputForNextTry();
+            return;
+        }
+
+        let isNew = false;
+        if (res >= 1 && res <= 99 && !lightRecord.includes(res)) {
+            const el = numDomList[res - 1];
+            lightRecord.push(res);
+            try {
+                await animateResultToCell(res, el);
+            } finally {
+                lightResultCell(el);
+                isResultAnimating = false;
+            }
+            isNew = true;
+        } else {
+            isResultAnimating = false;
+        }
+
+        lastResult = res;
+        updateTip(num);
+        lastTenDigit = Math.floor(num / 10);
+        drawRedCircles();
+
+        if (isNew && lightRecord.length === 3) {
+            clearDigitInputs();
+            playThreeNumbersFocusAnimation();
+            return;
+        }
+
+        showAllExistingBubblesAtFive();
+
+        const cnt = lightRecord.length;
+        if (isNew && cnt >= 6) {
+            const el = numDomList[res - 1];
+            showMathBubble(el, res);
+        }
+
+        if (isNew) guideInputForNextTry();
+    }
+
+    [inputTen, inputGe].forEach(inp => {
+        inp.addEventListener('focus', () => {
+            hideInputGuide();
+            cellTen.classList.toggle('focused', document.activeElement === inputTen);
+            cellGe.classList.toggle('focused', document.activeElement === inputGe);
+        });
+        inp.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (document.activeElement !== inputTen && document.activeElement !== inputGe) {
+                    cellTen.classList.remove('focused');
+                    cellGe.classList.remove('focused');
+                }
+            }, 80);
+        });
+    });
+
+    inputTen.addEventListener('keydown', (e) => {
+        if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+    });
+
+    inputTen.addEventListener('input', () => {
+        if (isResultAnimating || isFocusAnimating) { inputTen.value = ''; return; }
+        hideTipText();
+        const raw = inputTen.value.replace(/\D/g, '');
+        if (!raw) { inputTen.value = ''; return; }
+        const digit = raw.slice(-1);
+        if (digit === '0') {
+            inputTen.value = '';
+            showTip('十位不能是0，请输入1到9。');
+            return;
+        }
+        inputTen.value = digit;
+        inputGe.focus();
+        inputGe.select();
+    });
+
+    inputGe.addEventListener('keydown', (e) => {
+        if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+        if (e.key === 'Backspace' && inputGe.value === '') {
+            e.preventDefault();
+            inputTen.focus();
+            inputTen.select();
+        }
+    });
+
+    inputGe.addEventListener('input', () => {
+        if (isResultAnimating || isFocusAnimating) { inputGe.value = ''; return; }
+        hideTipText();
+        const raw = inputGe.value.replace(/\D/g, '');
+        if (!raw) { inputGe.value = ''; return; }
+        const digit = raw.slice(-1);
+        inputGe.value = digit;
+
+        if (inputTen.value) {
+            const num = Number(inputTen.value + digit);
+            calc(num);
+        }
+    });
+
+    document.getElementById('numpad').addEventListener('click', (e) => {
+        const btn = e.target.closest('.numpad-btn');
+        if (!btn) return;
+        if (isResultAnimating || isFocusAnimating) return;
+
+        const digit = btn.dataset.digit;
+        if (digit === undefined) return;
+
+        hideTipText();
+
+        if (!inputTen.value) {
+            if (digit === '0') {
+                showTip('十位不能是0，请输入1到9。');
+                return;
+            }
+            inputTen.value = digit;
+            inputGe.focus();
+        } else if (!inputGe.value) {
+            inputGe.value = digit;
+            const num = Number(inputTen.value + digit);
+            calc(num);
+        }
+    });
+
+    document.getElementById('numpadClear').addEventListener('click', handleNumpadClear);
+    document.getElementById('numpadDel2').addEventListener('click', handleNumpadDelete);
+
+    resetBtn.addEventListener('click', () => {
+        hideSecretButton();
+        hideTip();
+        clearTimeout(circleTimer);
+
+        numDomList.forEach(d => {
+            d.classList.remove('light', 'animate', 'pattern-focus');
+            const bubble = d.querySelector('.num-math-bubble');
+            if (bubble) bubble.remove();
+            const hoverBubble = d.querySelector('.hover-bubble');
+            if (hoverBubble) hoverBubble.remove();
+        });
+
+        removeAllCircles();
+        clearDigitInputs();
+        inputTen.readOnly = false;
+        cellTen.classList.remove('locked');
+        lightRecord = [];
+        lastTenDigit = null;
+        lastResult = null;
+        clearCalc();
+
+        focusOverlay.classList.remove('active');
+        continueExploreBtn.classList.remove('show');
+        focusFlyLayer.innerHTML = '';
+        document.querySelectorAll('.result-fly-num').forEach(d => d.remove());
+        setInputDisabled(false);
+        isResultAnimating = false;
+        isFocusAnimating = false;
+        hasPlayedThreeNumsFocus = false;
+
+        buildBoard();
+        setInitialLight();
+        const config = stageAudioConfig.start;
+        showTip(config.text, config.audio);
+        guideInputForNextTry('输入10到19之间的数');
+    });
+
+    secretBtn.addEventListener('click', () => {
+        if (secretBtn.classList.contains('locked')) return;
+        g?.trackComplete();
+    });
+
+    continueExploreBtn.addEventListener('click', () => {
+        continueExploreBtn.classList.remove('show');
+        focusOverlay.classList.remove('active');
+        focusFlyLayer.innerHTML = '';
+        setInputDisabled(false);
+        isFocusAnimating = false;
+        showTip("再试一个，验证一下你的猜想。");
+        guideInputForNextTry('换两位数再试试');
+    });
+
+    startBtn.addEventListener('click', async () => {
+        if (hasStarted) return;
+        hasStarted = true;
+
+        startScreen.classList.add('hidden');
+        appShell.classList.add('active');
+
+        const config = stageAudioConfig.start;
+        showTip(config.text, config.audio);
+        guideInputForNextTry('输入10到19之间的数');
+
+        try { await bgm.play(); } catch (e) { console.log('背景音乐播放失败：', e); }
+    });
+
+    function bootstrapApp() {
+        buildBoard();
+        setInitialLight();
+        clearCalc();
+        hideSecretButton();
+        
+        setTimeout(()=> {
+            document.querySelector('.page-loading').hidden = true;
+        }, 600);
+    }
+
+    bootstrapApp();
+</script>
+</body>
+</html>
