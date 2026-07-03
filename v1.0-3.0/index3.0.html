@@ -5,7 +5,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>读心术解密</title>
-    <link rel="stylesheet" href="./style.css" />
+    <script>
+        window.inject = function (_mortonH5) {
+            window.mortonH5 = _mortonH5;
+        };
+    </script>
+    <link rel="stylesheet" href="./style3.0.css" />
 </head>
 
 <body>
@@ -43,10 +48,7 @@
                                     <span class="digit-label">个位</span>
                                 </div>
                             </div>
-                            <button type="button" id="randomBtn" class="random-btn">
-                                <span class="random-icon">🎲</span>
-                                <span class="random-text">随机</span>
-                            </button>
+                            <button type="button" id="randomBtn" class="random-btn" style="display: none;">🎲</button>
                         </div>
 
                         <div class="calc-record-wrapper">
@@ -95,7 +97,13 @@
                             </button>
                         </div>
                     </div>
-
+                    <div class="board-hint" id="boardHint">
+                        <div class="hint-header">
+                            <span class="hint-icon">✨</span>
+                            <span class="hint-text">找一找<br>数学规律</span>
+                        </div>
+                        <div class="lit-numbers-list" id="litNumbersList"></div>
+                    </div>
                 </section>
             </div>
             <div class="focus-overlay" id="focusOverlay">
@@ -115,11 +123,74 @@
         </div>
     </div>
 
-    <audio id="bgm" src="audio/bgm.mp3" loop preload="auto"></audio>
+    <div class="modal-overlay" id="replayModal" style="display: none;">
+        <div class="replay-card">
+            <h2>🎉 恭喜你，数学小侦探！</h2>
+            <p>你已经成功破解了神奇的“读心术”！</p>
+            <p class="replay-desc">发现了吗？无论你写什么两位数，经过那个巧妙的手写公式，最后的结果都必然是 <b>9 的倍数</b>（即 9, 18, 27, 36 等）！这就是为什么我们在网格纸上把所有
+                9 倍数的格子都放上了相同的图案，这样你就觉得自己被看穿了心思。这就是数学的奇妙奥秘！</p>
+            <button id="replayBtn">再次挑战新秘密</button>
+        </div>
+    </div>
+
+    <audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
     <audio id="voiceAudio" preload="auto"></audio>
     <audio id="effectAudio" preload="auto"></audio>
+
+    <div class="debug-panel collapsed" id="debugPanel">
+        <div class="debug-header" id="debugToggle">
+            <span class="debug-icon">⚙️</span>
+            <span class="debug-title">控制台</span>
+            <span class="debug-arrow">▼</span>
+        </div>
+        <div class="debug-content" id="debugContent">
+            <div class="debug-item">
+                <label>记录展示模式</label>
+                <div class="record-mode-toggle" id="recordModeToggle" style="margin-top: 4px;">
+                    <label class="mode-option">
+                        <input type="radio" name="rMode" value="single">
+                        <span>一步多行</span>
+                    </label>
+                    <label class="mode-option active">
+                        <input type="radio" name="rMode" value="multi" checked>
+                        <span>一步一行</span>
+                    </label>
+                </div>
+            </div>
+            <div class="debug-item debug-item-switch">
+                <label for="showLitListToggle">显示右侧数学规律列</label>
+                <input type="checkbox" id="showLitListToggle">
+            </div>
+            <div class="debug-item debug-item-switch">
+                <label for="enableGuideVoiceToggle">开启引导语音</label>
+                <input type="checkbox" id="enableGuideVoiceToggle" checked>
+            </div>
+            <div class="debug-item debug-item-switch">
+                <label for="showGuideTextToggle">显示引导文字</label>
+                <input type="checkbox" id="showGuideTextToggle" checked>
+            </div>
+            <div class="debug-item">
+                <label for="unlitOpacitySlider">未点亮格子亮度</label>
+                <input type="range" id="unlitOpacitySlider" min="0" max="100" value="50">
+            </div>
+            <div class="debug-item debug-item-switch">
+                <label for="matrixPersistentToggle">矩阵亮度常在</label>
+                <input type="checkbox" id="matrixPersistentToggle" checked>
+            </div>
+            <div class="debug-item">
+                <label for="themeSelect">界面配色方案</label>
+                <select id="themeSelect"
+                    style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; cursor: pointer;">
+                    <option value="theme-1">配色1：复古书桌 (默认)</option>
+                    <option value="theme-2">配色2：清新海洋</option>
+                    <option value="theme-3">配色3：星际魔法</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <script src="mzone-global.2026-05-28.js"></script>
-    <script src="./app.js"></script>
+    <script src="./app3.0.js"></script>
 </body>
 
 </html>

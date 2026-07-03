@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>读心术解密</title>
+    <script>
+        window.inject = function (_mortonH5) {
+            window.mortonH5 = _mortonH5;
+        };
+    </script>
+    <style>
+        :root {
+            --bg: #ebdcb9;
+            /* Warm vintage desk color */
+            --bg-deep: #dbcaa2;
+            --panel: #fffef2;
+            /* Lined notebook paper yellow-white */
+            --panel-ruled: #faf7eb;
+            --text: #2d3748;
+            --text-pencil: #4a5568;
+            --text-blue: #1e3a8a;
+            /* Blue pen ink */
+            --text-red: #c2410c;
+            /* Red pen ink */
+            --muted: #718096;
+            --accent: #3182ce;
+            --accent-2: #dd6b20;
+            --danger: #e53e3e;
+            --highlight: #fef08a;
+            /* Highlighter yellow */
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #app {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 1920px;
+            height: 1080px;
+            transform-origin: center center;
+            overflow: hidden;
+        }
+
+        .page-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: #faf6eb;
+        }
+
+        .page-loading[hidden] {
+            display: none;
+        }
+
+        .page-loading span {
+            color: var(--text-pencil);
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin-bottom: 18px;
+            font-family: "Courier New", Courier, monospace;
+        }
+
+        .page-loading .loading {
+            width: 48px;
+            height: 48px;
+            position: relative;
+        }
+
+        .page-loading .shape {
+            width: 25%;
+            height: 25%;
+            position: absolute;
+            border-radius: 50%;
+            top: 40%;
+        }
+
+        .page-loading .shape-1 {
+            background: #ff7675;
+            animation: loadingShape1 1s ease infinite;
+        }
+
+        .page-loading .shape-2 {
+            background: #ffeaa7;
+            left: 25%;
+        }
+
+        .page-loading .shape-3 {
+            background: #74b9ff;
+            left: 50%;
+        }
+
+        .page-loading .shape-4 {
+            background: #55efc4;
+            left: 75%;
+            animation: loadingShape4 1s ease infinite;
+        }
+
+        @keyframes loadingShape1 {
+            0% {
+                left: -25%;
+                top: 5px;
+            }
+
+            25%,
+            50%,
+            75% {
+                left: 0;
+                top: 40%;
+            }
+
+            100% {
+                left: -25%;
+                top: 5px;
+            }
+        }
+
+        @keyframes loadingShape4 {
+
+            0%,
+            25%,
+            75%,
+            100% {
+                left: 75%;
+                top: 40%;
+            }
+
+            50% {
+                left: 125%;
+                top: 5px;
+            }
+        }
+
+        body {
+            background-color: var(--bg);
+            /* Desk wooden/matte grain texture */
+            background-image:
+                radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0.08) 100%),
+                linear-gradient(rgba(139, 122, 102, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 122, 102, 0.04) 1px, transparent 1px);
+            background-size: auto, 60px 60px, 60px 60px;
+            color: var(--text);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.06) 100%);
+            opacity: 0.9;
+        }
+
+        .start-screen {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .start-screen.hidden {
+            display: none;
+        }
+
+        .start-panel {
+            width: min(720px, 100%);
+            min-height: 380px;
+            padding: 48px 44px;
+            border-radius: 6px;
+            /* Vintage kraft paper styling */
+            background-color: #dcb38a;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 80%),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.01) 2px, rgba(0, 0, 0, 0.01) 4px);
+            border: 2px solid #b78e64;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.15),
+                0 5px 15px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transform: rotate(-1.5deg);
+            position: relative;
+        }
+
+        .start-panel::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 20px;
+            height: 20px;
+            background: #5c4033;
+            border-radius: 50%;
+            border: 4px solid #8c5b30;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-title {
+            font-family: "STKaiti", "KaiTi", serif;
+            font-size: clamp(38px, 6vw, 64px);
+            letter-spacing: 12px;
+            color: #4a2d12;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+
+        #startBtn {
+            border: none;
+            cursor: pointer;
+            color: #fffdec;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            width: 110px;
+            height: 110px;
+            border-radius: 48% 52% 50% 50% / 50% 48% 52% 50%;
+            background: radial-gradient(circle at 35% 35%, #e11d48 0%, #be123c 60%, #9f1239 100%);
+            box-shadow:
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.35),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+            border: 2px solid #be123c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
+            line-height: 1.3;
+            text-align: center;
+            padding: 10px;
+        }
+
+        #startBtn:hover {
+            transform: scale(1.06) rotate(6deg);
+            filter: brightness(1.05);
+        }
+
+        #startBtn:active {
+            transform: scale(0.95);
+        }
+
+        .app-shell {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+        }
+
+        .app-shell.active {
+            display: flex;
+            animation: revealApp .6s ease both;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 28px 4px;
+            position: relative;
+            z-index: 30;
+            flex-shrink: 0;
+        }
+
+        .header-tip-slot {
+            flex: 1;
+            max-width: 1400px;
+            min-height: 72px;
+            background-color: #fff9c4;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.01) 1px, transparent 1px);
+            background-size: 100% 32px;
+            box-shadow:
+                0 6px 14px rgba(0, 0, 0, 0.06),
+                0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left: 6px solid #fbc02d;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 12px 60px;
+            gap: 24px;
+            position: relative;
+            transform: rotate(-0.5deg);
+        }
+
+        .header-tip-slot::before {
+            content: '';
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%) rotate(1deg);
+            width: 140px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(0.5px);
+            border-left: 2px dashed rgba(0, 0, 0, 0.08);
+            border-right: 2px dashed rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            z-index: 5;
+        }
+
+        .header-robot {
+            font-size: 36px;
+        }
+
+        .header-tip {
+            flex: 1;
+            font-size: 26px;
+            font-weight: bold;
+            color: #455a64;
+            text-align: center;
+            line-height: 1.5;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            white-space: pre-wrap;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+        }
+
+        .header-tip.show {
+            opacity: 1;
+            visibility: visible;
+            animation: headerTipIn 0.45s ease both;
+        }
+
+        .header-tip .highlight-num {
+            color: #d84315;
+            font-weight: bold;
+            border-bottom: 1px double #d84315;
+            padding: 0 4px;
+        }
+
+        @keyframes headerTipIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .main-layout {
+            flex: 1;
+            display: flex;
+            gap: 64px;
+            padding: 8px 48px 24px;
+            align-items: stretch;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar {
+            width: 560px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-panel {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: stretch;
+            flex-shrink: 0;
+        }
+
+        .flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            background-color: #faf7eb;
+            background-image: linear-gradient(rgba(0, 150, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 28px;
+            padding: 24px 28px 20px;
+            transform: rotate(-0.5deg);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .flow::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #faf7eb;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            transform: rotate(0.4deg) translate(1px, 2px);
+            z-index: -1;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .boardWrap {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: fit-content;
+            height: 100%;
+            box-sizing: border-box;
+            background-color: #fafcfc;
+            padding: 20px 24px;
+            transform: rotate(0.5deg);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .boardWrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #fafcfc;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            transform: rotate(-0.4deg) translate(-1px, 2px);
+            z-index: -1;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(11, 76px);
+            grid-template-rows: repeat(9, 76px);
+            gap: 6px;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .num {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #475569;
+            position: relative;
+            width: 76px;
+            height: 76px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+        }
+
+        .num span {
+            font-size: 24px;
+            margin-left: 4px;
+        }
+
+        .num.light {
+            background: #ffedd5 !important;
+            color: #c2410c !important;
+            font-size: 38px !important;
+            border-color: #fdba74;
+            box-shadow: 0 0 16px rgba(249, 115, 22, 0.25);
+            z-index: 2;
+        }
+
+        .num.light.animate {
+            animation: blinkLight 0.6s ease-in-out 2;
+        }
+
+        @keyframes blinkLight {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1.03);
+            }
+        }
+
+        .sidebar-title {
+            color: #5c6bc0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            height: 32px;
+            line-height: 32px;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+            border-bottom: 1px dashed rgba(92, 107, 192, 0.3);
+            padding-bottom: 6px;
+            width: 100%;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .inputFixed {
+            position: relative;
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .digit-inputs {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .digit-cell {
+            width: 130px;
+            height: 130px;
+            background: #ffffff;
+            border: 3px solid #4a5568;
+            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .digit-cell.focused {
+            border-color: var(--text-blue);
+            border-width: 4px;
+            transform: scale(1.04) rotate(1.5deg);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .digit-cell.locked {
+            background: #fff5f5;
+            border-color: var(--text-red);
+            border-width: 3.5px;
+            transform: rotate(-1.5deg);
+        }
+
+        .digit-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-size: 60px;
+            font-weight: bold;
+            background: transparent;
+            color: var(--text-blue);
+            caret-color: transparent;
+            padding-bottom: 12px;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+        }
+
+        .digit-cell.locked input {
+            color: var(--text-red);
+        }
+
+        .digit-label {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: bold;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .random-btn {
+            position: absolute;
+            right: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 64px;
+            padding: 0 16px;
+            background: #fffbeb;
+            border: 2px solid #fbd38d;
+            border-radius: 8px;
+            color: #d97706;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #d97706, 0 4px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.05s, box-shadow 0.05s, background 0.1s;
+            user-select: none;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+            line-height: 1.2;
+            z-index: 10;
+        }
+
+        .random-btn:hover {
+            background: #fef3c7;
+        }
+
+        .random-btn:active {
+            transform: translateY(calc(-50% + 2px));
+            box-shadow: 0 0 0 #d97706, 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .calc-section {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            min-height: 48px;
+        }
+
+        .calc-label {
+            font-size: 20px;
+            color: #555;
+            font-weight: bold;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: 120px;
+            text-align: right;
+        }
+
+        .box {
+            flex: 1;
+            height: 56px;
+            min-height: 56px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px dashed #7f8c8d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: var(--text-blue);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            padding: 0 12px 4px;
+            text-align: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .box.highlight {
+            border-bottom: 2.5px solid var(--text-blue);
+        }
+
+        .arrow {
+            display: none;
+        }
+
+        .draft-history {
+            width: 100%;
+            flex: 1;
+            margin-top: 8px;
+            border-top: 2px dashed rgba(74, 85, 104, 0.2);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 140px;
+            max-height: 200px;
+        }
+
+        .draft-history-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-pencil);
+            margin-bottom: 4px;
+            font-family: "STKaiti", "KaiTi", sans-serif;
+            text-align: left;
+        }
+
+        .draft-history-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 6px;
+        }
+
+        .draft-history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .draft-history-list::-webkit-scrollbar-thumb {
+            background: rgba(74, 85, 104, 0.2);
+            border-radius: 3px;
+        }
+
+        .draft-item {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            font-size: 20px;
+            color: var(--text-blue);
+            font-weight: bold;
+            padding: 2px 6px;
+            border-bottom: 1px dashed rgba(0, 150, 255, 0.1);
+            animation: stampEffect 0.3s ease both;
+            text-align: left;
+        }
+
+        @keyframes stampEffect {
+            from {
+                opacity: 0;
+                transform: scale(0.9) rotate(-2deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .flow-keypad {
+            width: 100%;
+            margin-top: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            width: 100%;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .numpad-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .numpad-btn {
+            height: 76px;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            color: #475569;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #94a3b8, 0 4px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.05s, box-shadow 0.05s, background 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+        }
+
+        .numpad-btn:hover {
+            background: #f8fafc;
+        }
+
+        .numpad-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #94a3b8, 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .numpad-btn.del-btn {
+            background: #fffaf0;
+            border-color: #fbd38d;
+            box-shadow: 0 3px 0 #dd6b20, 0 4px 8px rgba(0, 0, 0, 0.06);
+            color: #dd6b20;
+            font-size: 22px;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+        }
+
+        .numpad-btn.del-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #dd6b20;
+        }
+
+        .numpad-btn.clear-btn {
+            background: #fff5f5;
+            border-color: #feb2b2;
+            box-shadow: 0 3px 0 #e53e3e, 0 4px 8px rgba(0, 0, 0, 0.06);
+            color: #e53e3e;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+        }
+
+        .numpad-btn.clear-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #e53e3e;
+        }
+
+        #secretBtn {
+            flex-shrink: 0;
+            min-width: 320px;
+            height: 68px;
+            padding: 0 36px;
+            background: #ffffff;
+            border: 3px dashed #94a3b8;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #64748b;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        #secretBtn.locked {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #cbd5e1;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none;
+        }
+
+        #secretBtn.reveal {
+            background: #fffbeb;
+            border: 2px dashed #d97706;
+            color: #b45309;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.1);
+        }
+
+        #secretBtn.flying {
+            position: fixed;
+            z-index: 300;
+            pointer-events: none;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .secret-btn-slot {
+            min-height: 52px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        @keyframes secretBtnSoftBreath {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 4px 10px rgba(217, 119, 6, 0.1);
+            }
+
+            50% {
+                transform: translateY(-2px) scale(1.03);
+                box-shadow: 0 8px 16px rgba(217, 119, 6, 0.18);
+            }
+        }
+
+        #result {
+            color: var(--text-red);
+            font-weight: bold;
+            font-size: 32px;
+            height: 56px;
+            min-height: 56px;
+            letter-spacing: 1px;
+            border-bottom: 3.5px solid var(--text-red);
+        }
+
+        .circle-animation {
+            --circle-delay: 0s;
+            position: absolute;
+            width: 88px;
+            height: 88px;
+            top: -6px;
+            left: -6px;
+            border-radius: 50%;
+            border: 3px double var(--text-red);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 51% 49% 52% 48% / 49% 52% 48% 51%;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+            animation:
+                circleDraw 0.7s ease-out var(--circle-delay) forwards,
+                circleBreath 1.1s ease-in-out calc(var(--circle-delay) + 0.7s) 4;
+        }
+
+        .circle-animation::before,
+        .circle-animation::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid rgba(194, 65, 12, 0.4);
+            animation: haloExpand 1.1s ease-out calc(var(--circle-delay) + 0.2s) 4;
+            border-radius: 48% 52% 47% 53% / 51% 48% 52% 49%;
+        }
+
+        .circle-animation::after {
+            inset: -8px;
+            border-color: rgba(194, 65, 12, 0.2);
+            animation-delay: calc(var(--circle-delay) + 0.38s);
+            border-radius: 53% 47% 51% 49% / 48% 53% 47% 52%;
+        }
+
+        @keyframes circleDraw {
+            0% {
+                opacity: 0;
+                transform: scale(0.35) rotate(0deg);
+                border-color: transparent;
+            }
+
+            45% {
+                opacity: 1;
+                border-color: var(--text-red);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(360deg);
+                border-color: var(--text-red);
+            }
+        }
+
+        @keyframes circleBreath {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+        }
+
+        @keyframes haloExpand {
+            0% {
+                opacity: 0.8;
+                transform: scale(0.9);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.25);
+            }
+        }
+
+        .focus-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(236, 230, 216, 0.85);
+            backdrop-filter: blur(2px);
+            z-index: 140;
+            display: none;
+        }
+
+        .focus-overlay.active {
+            display: block;
+        }
+
+        .focus-fly-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        .fly-num {
+            position: fixed;
+            width: 76px;
+            height: 76px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--text-blue);
+            background: #fffde7;
+            border: 1px solid #e2d8a0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            z-index: 201;
+            transform-origin: center center;
+        }
+
+        .result-fly-num {
+            position: fixed;
+            width: 76px;
+            height: 76px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--text-red);
+            background: #fff0f0;
+            border: 1px solid #fecaca;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+            z-index: 260;
+            pointer-events: none;
+            transform-origin: center center;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+        }
+
+        #continueExploreBtn {
+            position: fixed;
+            left: 50%;
+            top: calc(50% + 96px);
+            transform: translateX(-50%);
+            padding: 12px 36px;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffffff;
+            background: #475569;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 220;
+            display: none;
+            transition: all 0.2s;
+        }
+
+        #continueExploreBtn.show {
+            display: block;
+        }
+
+        #continueExploreBtn:hover {
+            background: #334155;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .replay-card {
+            width: min(500px, 90%);
+            padding: 36px 30px;
+            background: #fffef2;
+            border: 3px solid #b78e64;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            text-align: center;
+            transform: rotate(-1deg);
+            animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        .replay-card h2 {
+            font-family: "STKaiti", "KaiTi", serif;
+            font-size: 26px;
+            color: var(--text-red);
+            margin-bottom: 15px;
+        }
+
+        .replay-card p {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-pencil);
+            margin-bottom: 15px;
+        }
+
+        .replay-card .replay-desc {
+            font-size: 14px;
+            color: var(--text-blue);
+            background: rgba(0, 150, 255, 0.04);
+            border: 1px dashed rgba(0, 150, 255, 0.2);
+            padding: 12px;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        #replayBtn {
+            border: none;
+            padding: 12px 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            background: var(--text-red);
+            box-shadow: 0 4px 8px rgba(194, 65, 12, 0.25);
+            transition: all 0.2s;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+        }
+
+        #replayBtn:hover {
+            background: #a83a0a;
+            transform: scale(1.04);
+        }
+
+        .boardWrap.pattern-focus-mode .num:not(.light) {
+            opacity: 0.45;
+            filter: saturate(0.7);
+            transition: all 0.25s ease;
+        }
+
+        .num.light.pattern-focus {
+            z-index: 8;
+            animation: patternFocusPulse 1.05s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes patternFocusPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.06);
+            }
+        }
+
+        .inputFixed.guide-input .digit-cell {
+            animation: inputGuidePulse 1.2s ease-in-out 2;
+            border-color: var(--text-red);
+            box-shadow: 0 0 12px rgba(194, 65, 12, 0.2);
+        }
+
+        .numpad.guide-glow {
+            outline: 2.5px dashed var(--text-red);
+            outline-offset: 4px;
+            border-radius: 8px;
+            animation: numpadGlowPulse 1.2s ease-in-out 3;
+        }
+
+        @keyframes numpadGlowPulse {
+
+            0%,
+            100% {
+                outline-color: rgba(194, 65, 12, 0.4);
+                box-shadow: 0 0 8px rgba(194, 65, 12, 0.1);
+            }
+
+            50% {
+                outline-color: rgba(194, 65, 12, 0.9);
+                box-shadow: 0 0 16px rgba(194, 65, 12, 0.25);
+            }
+        }
+
+        @keyframes inputGuidePulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(194, 65, 12, 0);
+            }
+
+            45% {
+                transform: scale(1.035);
+                box-shadow: 0 0 14px rgba(194, 65, 12, 0.25);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(194, 65, 12, 0);
+            }
+        }
+
+        .num.light .hover-bubble {
+            display: none;
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 8px);
+            transform: translateX(-50%);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            z-index: 20;
+        }
+
+        .num.light .hover-bubble::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: translateX(-50%);
+            border-width: 6px 5px 0 5px;
+            border-style: solid;
+            border-color: #ffffff transparent transparent transparent;
+        }
+
+        .num.light:hover .hover-bubble {
+            display: block;
+        }
+
+        .boardWrap.show-bubbles .num.light .hover-bubble {
+            display: block;
+            animation: bubblePop 0.4s ease both;
+        }
+
+        @keyframes bubblePop {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        .board-hint {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            color: var(--text-blue);
+            font-size: 24px;
+            line-height: 1.55;
+            text-align: left;
+            width: 100%;
+            max-width: 800px;
+            min-height: 60px;
+            flex-shrink: 0;
+            padding: 12px 18px;
+            background: rgba(0, 150, 255, 0.04);
+            border: 2px dashed rgba(0, 150, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .hint-icon {
+            font-size: 26px;
+            line-height: 1.35;
+            flex-shrink: 0;
+        }
+
+        .hint-text {
+            flex-shrink: 0;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
+            font-weight: bold;
+        }
+
+        .lit-numbers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .lit-num-badge {
+            background: var(--highlight);
+            color: var(--text-red);
+            font-weight: bold;
+            font-size: 20px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            animation: badgePop 0.3s ease both;
+        }
+
+        @keyframes badgePop {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="start-screen" id="startScreen">
+            <div class="start-panel">
+                <h1 class="start-title">读心术解密</h1>
+                <button id="startBtn">开始<br>探索</button>
+            </div>
+        </div>
+
+        <div class="app-shell" id="appShell">
+            <header class="app-header">
+                <div class="header-tip-slot">
+                    <div class="header-robot">🤖</div>
+                    <div class="header-tip" id="normalTip"></div>
+                </div>
+            </header>
+
+            <div class="main-layout">
+                <aside class="sidebar">
+                    <div class="flow">
+                        <div class="sidebar-title">输入一个两位数</div>
+                        <div class="inputFixed">
+                            <div class="digit-inputs">
+                                <div class="digit-cell" id="cellTen">
+                                    <input type="tel" id="inputTen" inputmode="numeric" maxlength="1"
+                                        autocomplete="off" />
+                                    <span class="digit-label">十位</span>
+                                </div>
+                                <span class="digit-sep">·</span>
+                                <div class="digit-cell" id="cellGe">
+                                    <input type="tel" id="inputGe" inputmode="numeric" maxlength="1"
+                                        autocomplete="off" />
+                                    <span class="digit-label">个位</span>
+                                </div>
+                            </div>
+                            <button type="button" id="randomBtn" class="random-btn" style="display: none;">🎲<br>随机</button>
+                        </div>
+
+                        <div class="arrow"></div>
+                        <div class="calc-section">
+                            <div class="calc-label">减去个位</div>
+                            <div class="box" id="boxGe">—</div>
+                        </div>
+                        <div class="arrow"></div>
+                        <div class="calc-section">
+                            <div class="calc-label">再减去十位</div>
+                            <div class="box" id="boxShi">—</div>
+                        </div>
+                        <div class="arrow"></div>
+                        <div class="calc-section">
+                            <div class="calc-label">结果</div>
+                            <div class="box" id="result"></div>
+                        </div>
+
+                        <div class="draft-history" id="draftHistory">
+                            <div class="draft-history-title">📝 探索记录</div>
+                            <div class="draft-history-list" id="draftHistoryList"></div>
+                        </div>
+
+                        <div class="flow-keypad">
+                            <div class="numpad" id="numpad">
+                                <button type="button" class="numpad-btn" data-digit="1">1</button>
+                                <button type="button" class="numpad-btn" data-digit="2">2</button>
+                                <button type="button" class="numpad-btn" data-digit="3">3</button>
+                                <button type="button" class="numpad-btn" data-digit="4">4</button>
+                                <button type="button" class="numpad-btn" data-digit="5">5</button>
+                                <button type="button" class="numpad-btn" data-digit="6">6</button>
+                                <button type="button" class="numpad-btn" data-digit="7">7</button>
+                                <button type="button" class="numpad-btn" data-digit="8">8</button>
+                                <button type="button" class="numpad-btn" data-digit="9">9</button>
+                                <button type="button" class="numpad-btn" data-digit="0">0</button>
+                            </div>
+                            <div class="numpad-actions">
+                                <button type="button" class="numpad-btn clear-btn" id="numpadClear">清空</button>
+                                <button type="button" class="numpad-btn del-btn" id="numpadDel2">
+                                    <svg class="del-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                        <path fill="currentColor"
+                                            d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z" />
+                                    </svg>
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="board-panel">
+                    <div class="boardWrap">
+                        <div class="board" id="board"></div>
+                        <div class="board-hint" id="boardHint">
+                            <span class="hint-icon">✨</span>
+                            <span class="hint-text">已点亮：</span>
+                            <div class="lit-numbers-list" id="litNumbersList"></div>
+                        </div>
+                        <div class="secret-btn-slot">
+                            <button type="button" id="secretBtn" class="locked">
+                                <span class="btn-icon">🔒</span>发现规律
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div class="focus-overlay" id="focusOverlay">
+            <div class="focus-fly-layer" id="focusFlyLayer"></div>
+            <button id="continueExploreBtn">继续探索</button>
+        </div>
+    </div>
+
+    <div class="page-loading">
+        <span>LOADING</span>
+        <div class="loading">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="replayModal" style="display: none;">
+        <div class="replay-card">
+            <h2>🎉 恭喜你，数学小侦探！</h2>
+            <p>你已经成功破解了神奇的“读心术”！</p>
+            <p class="replay-desc">发现了吗？无论你写什么两位数，经过那个巧妙的手写公式，最后的结果都必然是 <b>9 的倍数</b>（即 9, 18, 27, 36 等）！这就是为什么我们在网格纸上把所有
+                9 倍数的格子都放上了相同的图案，这样你就觉得自己被看穿了心思。这就是数学的奇妙奥秘！</p>
+            <button id="replayBtn">再次挑战新秘密</button>
+        </div>
+    </div>
+
+    <audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+    <audio id="voiceAudio" preload="auto"></audio>
+    <audio id="effectAudio" preload="auto"></audio>
+
+    <script src="mzone-global.2026-05-28.js"></script>
+    <script>
+        const mzoneSdk = window.MzoneGlobal?.default || window.MzoneGlobal;
+        const { Global } = mzoneSdk || {};
+        const g = Global ? new Global('learning_class_gene_msg_h5') : null;
+
+        const appElement = document.getElementById('app');
+        function resizeApp() {
+            const scaleX = window.innerWidth / 1920;
+            const scaleY = window.innerHeight / 1080;
+            const scale = Math.min(scaleX, scaleY);
+            appElement.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+        window.addEventListener('resize', resizeApp);
+        resizeApp();
+
+        const board = document.getElementById('board');
+        const boardWrap = document.querySelector('.boardWrap');
+        const appShell = document.getElementById('appShell');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const bgm = document.getElementById('bgm');
+        const voiceAudio = document.getElementById('voiceAudio');
+        const effectAudio = document.getElementById('effectAudio');
+        const secretBtn = document.getElementById('secretBtn');
+        const normalTip = document.getElementById('normalTip');
+        const inputTen = document.getElementById('inputTen');
+        const inputGe = document.getElementById('inputGe');
+        const cellTen = document.getElementById('cellTen');
+        const cellGe = document.getElementById('cellGe');
+        const inputFixed = document.querySelector('.inputFixed');
+        const boxGe = document.getElementById('boxGe');
+        const boxShi = document.getElementById('boxShi');
+        const resultBox = document.getElementById('result');
+
+        const focusOverlay = document.getElementById('focusOverlay');
+        const focusFlyLayer = document.getElementById('focusFlyLayer');
+        const continueExploreBtn = document.getElementById('continueExploreBtn');
+
+        let numDomList = [];
+        let lightRecord = [];
+        let lastTenDigit = null;
+        let lastResult = null;
+        let circleTimer = null;
+        let hasStarted = false;
+        let isResultAnimating = false;
+        let isFocusAnimating = false;
+        let hasPlayedThreeNumsFocus = false;
+        let secretBtnTimer = null;
+        let secretBtnRevealed = false;
+
+        const mathBubbleTimers = new WeakMap();
+
+        const lionNums = new Set([9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99]);
+
+        const randomEmojis = ["🐹", "🍎", "🍊", "⭐", "🐶", "🌸", "🐮", "🔥", "🌈", "✨", "💡", "🦁"];
+        let currentMagicPattern = '';
+        let nonMagicPatterns = [];
+
+        bgm.volume = 0.14;
+
+        // 启发式、引导式的教师脚本（让孩子动脑子）
+        const stageTexts = {
+            start: "先输入一个10到19之间的两位数，看看会得到什么结果。",
+            firstLight: "很好，接下来试试其他两位数，20到99都可以。",
+            secondLight: "再尝试输入一个新的两位数，或许你会有所发现。",
+            thirdLight: "看看你已经点亮的数，有什么共同的数学规律？你可以继续探索，验证你的猜想。",
+            fourthLight: "通过9好像可以计算出这些数，如果你发现了规律，可以点击最下方的按钮。",
+            fifthLight: "规律好像都在9的乘法口诀里。",
+            sixthLight: "仔细观察这些数上面的气泡，你发现规律了吗？",
+            seventhLight: "这些数除以9，好像都能除得尽。",
+            eighthLight: "这些算出来的数，好像都是9的倍数。",
+            sameResult: "这个结果和上次的一样，换个十位数再试试看",
+            alreadyLight: "这个结果已经被点亮过了，换一个开头不一样的两位数",
+            subsequent: "你已经找到规律了！点击下方按钮继续。"
+        };
+
+        const stageAudioConfig = {
+            light: { audio: 'audio/点亮.mp3' }
+        };
+
+        const pencilAudios = [
+            'audio/铅笔画圈-快.mp3',
+            'audio/铅笔纸上画圈声_4.mp3',
+            'audio/铅笔纸上画圈声_5.mp3'
+        ];
+
+        // 预热浏览器 TTS 发音人
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        let currentUtterance = null;
+        function speakText(text, callback) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+
+                const cleanText = text.replace(/<[^>]*>/g, '');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                currentUtterance = utterance;
+
+                const voices = window.speechSynthesis.getVoices();
+                let selectedVoice = null;
+
+                // 筛选优质中文人声（如微软 Xiaoxiao，或标准中文女声）
+                const priorityNames = ['xiaoxiao', 'yaoyao', 'tingting', 'huihui', 'kangkang', 'chinese', 'zh-cn', 'zh-tw'];
+                for (const name of priorityNames) {
+                    selectedVoice = voices.find(v => v.lang.toLowerCase().startsWith('zh') && v.name.toLowerCase().includes(name));
+                    if (selectedVoice) break;
+                }
+                if (!selectedVoice) {
+                    selectedVoice = voices.find(v => v.lang.toLowerCase().startsWith('zh'));
+                }
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+
+                utterance.rate = 1.05;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+
+                if (callback) {
+                    utterance.onend = () => {
+                        if (currentUtterance === utterance) callback();
+                    };
+                    utterance.onerror = () => {
+                        if (currentUtterance === utterance) callback();
+                    };
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.log('Web Speech Synthesis is not supported.');
+                if (callback) callback();
+            }
+        }
+
+        function initPatterns() {
+            const magicIndex = Math.floor(Math.random() * randomEmojis.length);
+            currentMagicPattern = randomEmojis[magicIndex];
+            nonMagicPatterns = randomEmojis.filter((_, idx) => idx !== magicIndex);
+        }
+
+        function getRandomPatternImage() {
+            return nonMagicPatterns[Math.floor(Math.random() * nonMagicPatterns.length)];
+        }
+
+        function buildBoard() {
+            board.innerHTML = '';
+            numDomList = [];
+            for (let i = 1; i <= 99; i++) {
+                const d = document.createElement('div');
+                d.className = 'num';
+                const patternImage = lionNums.has(i) ? currentMagicPattern : getRandomPatternImage();
+                d.innerHTML = `${i}<span>${patternImage}</span>`;
+                d.dataset.val = i;
+                board.appendChild(d);
+                numDomList.push(d);
+            }
+        }
+
+        function setInitialLight() {
+            lightRecord = [];
+            const list = document.getElementById('draftHistoryList');
+            if (list) list.innerHTML = '';
+            const litList = document.getElementById('litNumbersList');
+            if (litList) litList.innerHTML = '';
+            boardWrap.classList.remove('show-bubbles');
+        }
+
+        function updateLitNumbersList(res) {
+            const list = document.getElementById('litNumbersList');
+            if (!list) return;
+            const badge = document.createElement('div');
+            badge.className = 'lit-num-badge';
+            badge.textContent = res;
+            
+            const existingBadges = Array.from(list.children);
+            const insertIndex = existingBadges.findIndex(el => Number(el.textContent) > res);
+            if (insertIndex === -1) {
+                list.appendChild(badge);
+            } else {
+                list.insertBefore(badge, existingBadges[insertIndex]);
+            }
+        }
+
+        // ── 音频播放函数 ──────────────────────────────────────
+        function stopAudio() {
+            voiceAudio.pause();
+            voiceAudio.currentTime = 0;
+        }
+
+        function playAudio(audioPath) {
+            voiceAudio.src = audioPath;
+            voiceAudio.volume = 0.95;
+            voiceAudio.play().catch(e => console.log('音频播放失败:', e));
+        }
+
+        function playEffect(audioPath) {
+            effectAudio.src = audioPath;
+            effectAudio.volume = 0.8;
+            effectAudio.play().catch(e => console.log('音效播放失败:', e));
+        }
+
+        function showTip(t) {
+            stopAudio();
+
+            let htmlText = t.replace(/(\d+到\d+|\d+几|\d+)/g, '<span class="highlight-num">$1</span>');
+            htmlText = htmlText.replace(/\n/g, '<br>');
+
+            normalTip.innerHTML = htmlText;
+            normalTip.classList.remove('show');
+            void normalTip.offsetWidth;
+            normalTip.classList.add('show');
+
+            speakText(t);
+        }
+
+        function hideTip() {
+            normalTip.classList.remove('show');
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function hideTipText() {
+            normalTip.classList.remove('show');
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getCellCenter(el) {
+            const rect = el.getBoundingClientRect();
+            return {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }
+
+        function guideInputForNextTry(message = '再试试20到99之间的数') {
+            if (isFocusAnimating) return;
+            setInputDisabled(false);
+            clearDigitInputs();
+
+            if (lightRecord.length === 0) {
+                inputTen.value = '1';
+                inputTen.readOnly = true;
+                cellTen.classList.add('locked');
+                inputGe.focus();
+                const rb = document.getElementById('randomBtn');
+                if (rb) rb.style.display = 'none';
+            } else {
+                inputTen.readOnly = false;
+                cellTen.classList.remove('locked');
+                inputTen.focus();
+                const rb = document.getElementById('randomBtn');
+                if (rb) rb.style.display = 'flex';
+            }
+
+            inputFixed.dataset.guide = message;
+            inputFixed.classList.remove('guide-input');
+            void inputFixed.offsetWidth;
+            inputFixed.classList.add('guide-input');
+        }
+
+        function showHandGuideOnGe() {
+            document.querySelectorAll('.hand-guide').forEach(el => el.remove());
+            document.querySelectorAll('.ripple-effect').forEach(el => el.remove());
+
+            const numpad = document.getElementById('numpad');
+            const btns = numpad.querySelectorAll('.numpad-btn');
+            const btn4 = btns[3];  // 4
+            const btn5 = btns[4];  // 5
+            const btn9 = btns[8];  // 9
+            const btn0 = btns[9];  // 0
+            if (!btn4 || !btn5 || !btn9 || !btn0) return;
+
+            const rects = [btn4, btn5, btn9, btn0].map(b => b.getBoundingClientRect());
+            const cx = rects.reduce((s, r) => s + r.left + r.width / 2, 0) / 4;
+            const cy = rects.reduce((s, r) => s + r.top + r.height / 2, 0) / 4;
+
+            const hand = document.createElement('div');
+            hand.className = 'hand-guide';
+            hand.textContent = '👆';
+            hand.style.cssText = `position:fixed;z-index:202;pointer-events:none;font-size:32px;transform-origin:bottom center;transition:transform 0.15s ease;`;
+            hand.style.left = `${cx - 16}px`;
+            hand.style.top = `${cy - 32}px`;
+            document.body.appendChild(hand);
+
+            numpad.classList.add('guide-glow');
+
+            function doClick() {
+                if (!hand.isConnected) return;
+                hand.style.transform = 'scale(0.75)';
+                setTimeout(() => { if (hand.isConnected) hand.style.transform = 'scale(1)'; }, 150);
+
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple-effect';
+                ripple.style.left = `${cx - 30}px`;
+                ripple.style.top = `${cy - 30}px`;
+                document.body.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 700);
+            }
+
+            doClick();
+            const t1 = setTimeout(doClick, 500);
+            const t2 = setTimeout(doClick, 1000);
+
+            const removeHand = () => {
+                clearTimeout(t1); clearTimeout(t2);
+                hand.remove();
+                numpad.classList.remove('guide-glow');
+                document.querySelectorAll('.ripple-effect').forEach(el => el.remove());
+            };
+
+            const autoRemove = setTimeout(removeHand, 1500);
+            const onInteract = () => { clearTimeout(autoRemove); removeHand(); };
+            numpad.addEventListener('click', onInteract, { once: true });
+            inputGe.addEventListener('input', onInteract, { once: true });
+        }
+
+        function hideInputGuide() {
+            inputFixed.classList.remove('guide-input');
+            delete inputFixed.dataset.guide;
+        }
+
+        function createRippleEffect(centerX, centerY) {
+            document.querySelectorAll('.secret-btn-ripple').forEach(el => el.remove());
+
+            for (let i = 0; i < 3; i++) {
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple-effect secret-btn-ripple';
+                ripple.style.left = `${centerX - 30}px`;
+                ripple.style.top = `${centerY - 30}px`;
+                ripple.style.animationDelay = `${i * 0.3}s`;
+                ripple.style.zIndex = 250;
+                document.body.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 1200 + i * 300);
+            }
+        }
+
+        function hideSecretButton() {
+            clearTimeout(secretBtnTimer);
+            secretBtnTimer = null;
+            secretBtnRevealed = false;
+            secretBtn.classList.remove('reveal', 'soft-breath', 'flying');
+            secretBtn.style.cssText = '';
+            secretBtn.classList.add('locked');
+            secretBtn.innerHTML = '<span class="btn-icon">🔒</span>发现规律';
+        }
+
+        function unlockSecretButton() {
+            secretBtn.classList.remove('locked');
+            secretBtn.innerHTML = '<span class="btn-icon">✅</span>发现规律';
+        }
+
+        function revealSecretButton(delay = 0) {
+            if (secretBtnRevealed) return;
+            clearTimeout(secretBtnTimer);
+            secretBtnTimer = setTimeout(() => {
+                secretBtnRevealed = true;
+                secretBtn.classList.add('locked');
+                secretBtn.innerHTML = '<span class="btn-icon">✅</span>发现规律';
+
+                const finalRect = secretBtn.getBoundingClientRect();
+                const finalX = finalRect.left + finalRect.width / 2;
+                const finalY = finalRect.top + finalRect.height / 2;
+
+                const appRect = appElement.getBoundingClientRect();
+                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                const finalLocalX = (finalX - appRect.left) / scale;
+                const finalLocalY = (finalY - appRect.top) / scale;
+
+                secretBtn.style.visibility = 'hidden';
+                secretBtn.style.opacity = '0';
+
+                const boardRect = board.getBoundingClientRect();
+                const startX = boardRect.left + boardRect.width / 2;
+                const startY = boardRect.top + boardRect.height / 2;
+                const startLocalX = (startX - appRect.left) / scale;
+                const startLocalY = (startY - appRect.top) / scale;
+
+                secretBtn.classList.add('flying');
+                secretBtn.style.visibility = 'visible';
+                secretBtn.style.left = `${startLocalX - secretBtn.offsetWidth / 2}px`;
+                secretBtn.style.top = `${startLocalY - secretBtn.offsetHeight / 2}px`;
+                secretBtn.style.transform = 'scale(0.3)';
+                secretBtn.style.opacity = '0';
+                secretBtn.style.transition = 'none';
+
+                void secretBtn.offsetWidth;
+
+                secretBtn.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease';
+                secretBtn.style.transform = 'scale(1.1)';
+                secretBtn.style.opacity = '1';
+
+                setTimeout(() => {
+                    secretBtn.style.transition = [
+                        'left 0.75s cubic-bezier(0.22, 0.75, 0.25, 1)',
+                        'top 0.75s cubic-bezier(0.22, 0.75, 0.25, 1)',
+                        'transform 0.35s ease-out'
+                    ].join(', ');
+                    secretBtn.style.left = `${finalLocalX - secretBtn.offsetWidth / 2}px`;
+                    secretBtn.style.top = `${finalLocalY - secretBtn.offsetHeight / 2}px`;
+                    secretBtn.style.transform = 'scale(1)';
+
+                    setTimeout(() => {
+                        secretBtn.classList.remove('flying');
+                        secretBtn.style.cssText = '';
+                        unlockSecretButton();
+                        secretBtn.classList.add('reveal', 'soft-breath');
+                        createRippleEffect(finalX, finalY);
+                    }, 800);
+                }, 500);
+            }, delay);
+        }
+
+        function getNextTenHint(curTen) {
+            const usedTens = new Set(lightRecord.map(r => r / 9));
+            for (let t = 1; t <= 9; t++) {
+                if (t !== curTen && !usedTens.has(t)) {
+                    return { hint: `试试输入${t}0几的数。`, nextTen: t };
+                }
+            }
+            return { hint: '你已经全部点亮了，发现数字的规律了吗？', nextTen: null };
+        }
+
+        // 闪烁强调矩阵中已被点亮的格子
+        function flashLitCell(res) {
+            const el = numDomList[res - 1];
+            if (!el || !el.classList.contains('light')) return;
+            
+            // 缩放脉冲动画
+            el.classList.remove('animate');
+            void el.offsetWidth;
+            el.classList.add('animate');
+
+            // 圈出重复结果
+            el.querySelectorAll('.circle-animation').forEach(c => c.remove());
+            const circle = document.createElement('div');
+            circle.className = 'circle-animation circle-flash';
+            circle.style.setProperty('--circle-delay', '0s');
+            el.appendChild(circle);
+            setTimeout(() => circle.remove(), 7200);
+        }
+
+        function setInputDisabled(disabled) {
+            inputTen.disabled = disabled;
+            inputGe.disabled = disabled;
+        }
+
+        function clearDigitInputs() {
+            inputTen.value = '';
+            inputGe.value = '';
+        }
+
+        function getComposedValue() {
+            return inputTen.value + inputGe.value;
+        }
+
+        function showInputInvalidTip(message) {
+            clearCalc();
+            showTip(message);
+            guideInputForNextTry('请输入10到99的两位整数');
+        }
+
+        function normalizeInputValue(raw) {
+            return raw.replace(/\D/g, '').slice(0, 2);
+        }
+
+        function isValidTwoDigitIntegerText(v) {
+            return /^\d{2}$/.test(v) && Number(v) >= 10 && Number(v) <= 99;
+        }
+
+        async function animateResultToCell(num, targetEl) {
+            const from = getCellCenter(resultBox);
+            const to = getCellCenter(targetEl);
+            const fly = document.createElement('div');
+            fly.className = 'result-fly-num';
+            fly.textContent = num;
+            fly.style.left = `${from.x - 38}px`;
+            fly.style.top = `${from.y - 38}px`;
+            document.body.appendChild(fly);
+
+            const randomPencil = pencilAudios[Math.floor(Math.random() * pencilAudios.length)];
+            playEffect(randomPencil);
+
+            const animation = fly.animate(
+                [
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    {
+                        transform: `translate(${to.x - from.x}px, ${to.y - from.y}px) scale(1.08)`,
+                        opacity: 1
+                    }
+                ],
+                {
+                    duration: 500, // 加快节奏至500ms
+                    easing: 'cubic-bezier(0.22, 0.75, 0.25, 1)',
+                    fill: 'forwards'
+                }
+            );
+
+            try {
+                await animation.finished;
+            } catch (e) { }
+
+            fly.remove();
+        }
+
+        function lightResultCell(el) {
+            el.classList.remove('animate');
+            void el.offsetWidth;
+            el.classList.add('light', 'animate');
+
+            const val = Number(el.dataset.val);
+            if (val % 9 === 0) {
+                const existing = el.querySelector('.hover-bubble');
+                if (!existing) {
+                    const hb = document.createElement('div');
+                    hb.className = 'hover-bubble';
+                    hb.textContent = `${val / 9} × 9 = ${val}`;
+                    el.appendChild(hb);
+                }
+            }
+        }
+
+        async function playThreeNumbersFocusAnimation() {
+            if (hasPlayedThreeNumsFocus || lightRecord.length < 3) return;
+            hasPlayedThreeNumsFocus = true;
+
+            await wait(300);
+            showTip(stageTexts.thirdLight);
+            drawRedCircles();
+        }
+
+        function removeAllCircles() {
+            document.querySelectorAll('.circle-animation:not(.circle-flash)').forEach(c => c.remove());
+            document.querySelectorAll('.num.pattern-focus').forEach(d => d.classList.remove('pattern-focus'));
+            boardWrap.classList.remove('pattern-focus-mode');
+        }
+
+        function drawRedCircles() {
+            clearTimeout(circleTimer);
+            removeAllCircles();
+
+            // 3个及以上即进入“规律聚焦”状态，绘制红铅笔双圈
+            if (lightRecord.length >= 3) {
+                boardWrap.classList.add('pattern-focus-mode');
+                lightRecord
+                    .slice()
+                    .sort((a, b) => a - b)
+                    .forEach((num, index) => {
+                        const el = numDomList[num - 1];
+                        if (!el) return;
+                        el.classList.add('pattern-focus');
+                        const circle = document.createElement('div');
+                        circle.className = 'circle-animation';
+                        circle.style.setProperty('--circle-delay', `${index * 0.15}s`);
+                        el.appendChild(circle);
+                    });
+                circleTimer = setTimeout(removeAllCircles, 10000 + lightRecord.length * 200);
+            }
+        }
+
+
+
+        function addHistoryItem(num, ge, shi, res) {
+            const list = document.getElementById('draftHistoryList');
+            if (!list) return;
+            const count = list.children.length + 1;
+            const item = document.createElement('div');
+            item.className = 'draft-item';
+            item.textContent = `第${count}次：${num} - ${ge} - ${shi} = ${res}`;
+            list.appendChild(item);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function updateTip(num) {
+            const cnt = lightRecord.length;
+            
+            if (cnt >= 6) {
+                boardWrap.classList.add('show-bubbles');
+            }
+
+            if (cnt === 1) {
+                showTip(stageTexts.firstLight);
+            } else if (cnt === 2) {
+                showTip(stageTexts.secondLight);
+            } else if (cnt === 4) {
+                revealSecretButton(1200);
+                showTip(stageTexts.fourthLight);
+            } else if (cnt === 5) {
+                revealSecretButton(0);
+                showTip(stageTexts.fifthLight);
+            } else if (cnt === 6) {
+                revealSecretButton(0);
+                showTip(stageTexts.sixthLight);
+            } else if (cnt === 7) {
+                revealSecretButton(0);
+                showTip(stageTexts.seventhLight);
+            } else if (cnt === 8) {
+                revealSecretButton(0);
+                showTip(stageTexts.eighthLight);
+            } else if (cnt >= 9) {
+                revealSecretButton(0);
+                showTip(stageTexts.subsequent);
+            }
+        }
+
+        function highlightBox(el) {
+            el.classList.add('highlight');
+            setTimeout(() => {
+                el.classList.remove('highlight');
+            }, 300);
+        }
+
+        // 直接输出计算式（加快节奏）
+        async function updateCalcAnimated(a, b, s) {
+            const c1 = a - b;
+            const c2 = c1 - s;
+
+            boxGe.textContent = `${a} - ${b} = ${c1}`;
+            boxShi.textContent = `${c1} - ${s} = ${c2}`;
+            resultBox.textContent = String(c2);
+
+            highlightBox(boxGe);
+            highlightBox(boxShi);
+            highlightBox(resultBox);
+
+            await wait(200);
+        }
+
+        function clearCalc() {
+            boxGe.textContent = '—';
+            boxShi.textContent = '—';
+            resultBox.textContent = '';
+        }
+
+        function handleNumpadDelete() {
+            if (isResultAnimating || isFocusAnimating) return;
+            if (inputGe.value) {
+                inputGe.value = '';
+                inputGe.focus();
+            } else if (inputTen.value && !inputTen.readOnly) {
+                inputTen.value = '';
+                inputTen.focus();
+            } else if (inputTen.readOnly && inputGe.value === '') {
+                inputGe.focus();
+            }
+            hideInputGuide();
+            hideTipText();
+            clearCalc();
+        }
+
+        function handleNumpadClear() {
+            if (isResultAnimating || isFocusAnimating) return;
+            if (!inputTen.readOnly) inputTen.value = '';
+            inputGe.value = '';
+            if (inputTen.readOnly) {
+                inputTen.value = '1';
+                inputGe.focus();
+            } else {
+                inputTen.focus();
+            }
+            hideInputGuide();
+            hideTipText();
+            clearCalc();
+        }
+
+        async function calc(num) {
+            if (isResultAnimating || isFocusAnimating) return;
+            if (!Number.isInteger(num) || num < 10 || num > 99) {
+                showInputInvalidTip('请输入10到99之间的两位整数。');
+                return;
+            }
+
+            const ge = num % 10;
+            const shi = Math.floor(num / 10);
+            const res = num - ge - shi;
+
+            // 直接进行计算渲染
+            clearCalc();
+            isResultAnimating = true;
+            setInputDisabled(true);
+
+            await updateCalcAnimated(num, ge, shi);
+
+            // 追加在草稿纸历史列表上
+            addHistoryItem(num, ge, shi, res);
+
+            const isAlreadyLight = lightRecord.includes(res);
+            const curTen = Math.floor(num / 10);
+
+            if (isNaN(num) || isNaN(curTen) || curTen < 1 || curTen > 9) {
+                showTip('输入无效，请重新输入。');
+                isResultAnimating = false;
+                setInputDisabled(false);
+                guideInputForNextTry();
+                return;
+            }
+
+            // 1. 同十位数重复输入（不阻挠流程，仅给出温和提示与方格发光）
+            if (lastTenDigit !== null && curTen === lastTenDigit) {
+                flashLitCell(res);
+                showTip(stageTexts.sameResult);
+                lastResult = res;
+                isResultAnimating = false;
+                guideInputForNextTry('换个十位数不同的两位数算算');
+                return;
+            }
+
+            // 2. 结果已被点亮（不阻挠流程，仅给出温和提示与方格发光）
+            if (isAlreadyLight) {
+                flashLitCell(res);
+                showTip(stageTexts.alreadyLight);
+                lastResult = res;
+                lastTenDigit = curTen;
+                isResultAnimating = false;
+                guideInputForNextTry('再选一个不同的两位数试试');
+                return;
+            }
+
+            let isNew = false;
+            if (res >= 1 && res <= 99 && !lightRecord.includes(res)) {
+                const el = numDomList[res - 1];
+                lightRecord.push(res);
+                try {
+                    await animateResultToCell(res, el);
+                } finally {
+                    lightResultCell(el);
+                    isResultAnimating = false;
+                }
+                isNew = true;
+                updateLitNumbersList(res);
+            } else {
+                isResultAnimating = false;
+            }
+
+            lastResult = res;
+            lastTenDigit = Math.floor(num / 10);
+            drawRedCircles();
+
+            // 首次第三个点亮会播放 3nums focus 语音和动画
+            if (isNew && lightRecord.length === 3) {
+                clearDigitInputs();
+                playThreeNumbersFocusAnimation();
+                return;
+            }
+
+
+            updateTip(num);
+
+            if (isNew) {
+                guideInputForNextTry();
+            }
+        }
+
+        // ── 双格输入事件 ──────────────────────────────────────
+        [inputTen, inputGe].forEach(inp => {
+            inp.addEventListener('focus', () => {
+                cellTen.classList.toggle('focused', document.activeElement === inputTen);
+                cellGe.classList.toggle('focused', document.activeElement === inputGe);
+            });
+            inp.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (document.activeElement !== inputTen && document.activeElement !== inputGe) {
+                        cellTen.classList.remove('focused');
+                        cellGe.classList.remove('focused');
+                    }
+                }, 80);
+            });
+        });
+
+        inputTen.addEventListener('keydown', (e) => {
+            if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+        });
+
+        inputTen.addEventListener('input', () => {
+            if (isResultAnimating || isFocusAnimating) { inputTen.value = ''; return; }
+            hideInputGuide();
+            hideTipText();
+
+            const raw = inputTen.value.replace(/\D/g, '');
+            if (!raw) { inputTen.value = ''; return; }
+
+            const digit = raw.slice(-1);
+            if (digit === '0') {
+                inputTen.value = '';
+                showTip('十位不能是0，请输入1到9。');
+                return;
+            }
+            inputTen.value = digit;
+            inputGe.focus();
+            inputGe.select();
+        });
+
+        inputGe.addEventListener('keydown', (e) => {
+            if (isResultAnimating || isFocusAnimating) { e.preventDefault(); return; }
+            if (e.key === 'Backspace' && inputGe.value === '') {
+                e.preventDefault();
+                inputTen.focus();
+                inputTen.select();
+            }
+        });
+
+        inputGe.addEventListener('input', () => {
+            if (isResultAnimating || isFocusAnimating) { inputGe.value = ''; return; }
+            hideInputGuide();
+            hideTipText();
+
+            const raw = inputGe.value.replace(/\D/g, '');
+            if (!raw) { inputGe.value = ''; return; }
+
+            const digit = raw.slice(-1);
+            inputGe.value = digit;
+
+            if (inputTen.value) {
+                const num = Number(inputTen.value + digit);
+                calc(num);
+            }
+        });
+
+        [inputTen, inputGe].forEach(inp => inp.addEventListener('click', hideInputGuide));
+
+        // ── 数字键盘 ──────────────────────────────────────────
+        document.getElementById('numpad').addEventListener('click', (e) => {
+            const btn = e.target.closest('.numpad-btn');
+            if (!btn) return;
+            if (isResultAnimating || isFocusAnimating) return;
+
+            const digit = btn.dataset.digit;
+            if (digit === undefined) return;
+
+            hideInputGuide();
+            hideTipText();
+
+            if (!inputTen.value) {
+                if (digit === '0') {
+                    showTip('十位不能是0，请输入1到9。');
+                    return;
+                }
+                inputTen.value = digit;
+                inputGe.focus();
+            } else if (!inputGe.value) {
+                inputGe.value = digit;
+                const num = Number(inputTen.value + digit);
+                calc(num);
+            }
+        });
+
+        document.getElementById('numpadClear').addEventListener('click', handleNumpadClear);
+        document.getElementById('numpadDel2').addEventListener('click', handleNumpadDelete);
+
+        const randomBtn = document.getElementById('randomBtn');
+        if (randomBtn) {
+            randomBtn.addEventListener('click', () => {
+                if (isResultAnimating || isFocusAnimating) return;
+                hideInputGuide();
+                hideTipText();
+                
+                const randomNum = Math.floor(Math.random() * 90) + 10;
+                const ten = Math.floor(randomNum / 10);
+                const ge = randomNum % 10;
+                
+                inputTen.value = ten;
+                inputGe.value = ge;
+                
+                calc(randomNum);
+            });
+        }
+
+        secretBtn.addEventListener('click', () => {
+            if (secretBtn.classList.contains('locked')) return;
+
+            // 显示再次挑战模态弹窗
+            const modal = document.getElementById('replayModal');
+            if (modal) modal.style.display = 'flex';
+
+            showTip("恭喜你成功破解了读心术的奥秘！");
+            g?.trackComplete();
+        });
+
+        document.getElementById('replayBtn').addEventListener('click', () => {
+            const modal = document.getElementById('replayModal');
+            if (modal) modal.style.display = 'none';
+            playAgain();
+        });
+
+        continueExploreBtn.addEventListener('click', () => {
+            continueExploreBtn.classList.remove('show');
+            focusOverlay.classList.remove('active');
+            focusFlyLayer.innerHTML = '';
+            setInputDisabled(false);
+            isFocusAnimating = false;
+            showTip("再试一个，验证一下你的猜想吧。");
+            guideInputForNextTry('换两位数再试试');
+        });
+
+        startBtn.addEventListener('click', async () => {
+            if (hasStarted) return;
+            hasStarted = true;
+
+            startScreen.classList.add('hidden');
+            appShell.classList.add('active');
+
+            // 首轮小手引导
+            setTimeout(() => {
+                if (lightRecord.length === 0) {
+                    showHandGuideOnGe();
+                }
+            }, 1500);
+
+            showTip(stageTexts.start);
+            guideInputForNextTry('写下一个10到19之间的两位数');
+
+            try {
+                await bgm.play();
+            } catch (e) {
+                console.log('背景音乐播放失败：', e);
+            }
+        });
+
+        function playAgain() {
+            initPatterns();
+            buildBoard();
+            setInitialLight();
+            clearCalc();
+            lastTenDigit = null;
+            lastResult = null;
+            hasPlayedThreeNumsFocus = false;
+            removeAllCircles();
+            hideSecretButton();
+
+            showTip(stageTexts.start);
+            guideInputForNextTry('写下一个10到19之间的两位数');
+        }
+
+        function bootstrapApp() {
+            initPatterns();
+            buildBoard();
+            setInitialLight();
+            clearCalc();
+            hideSecretButton();
+        }
+
+        if (g) {
+            const system = g.query('userId') ? 'morton' : 'ide';
+            const isEmbedded = window.self !== window.top;
+
+            if (isEmbedded) {
+                g.resize(1440, 900);
+            }
+
+            if (isEmbedded || system === 'morton') {
+                g.loading(true);
+                g.init(system, Number(g.query('unitId') || 0), { images: [] }, () => {
+                    g.loading(false);
+                });
+            } else {
+                g.trackView();
+                g.trackInit();
+                g.loading(false);
+            }
+        }
+
+        bootstrapApp();
+    </script>
+</body>
+
+</html>
