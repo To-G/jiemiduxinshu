@@ -634,7 +634,7 @@ class UIManager {
 
             // ⚠️ 3. 关键点：这里会播放语音，并一直【等待语音播放完毕】才继续往下走
             await this.showTipAndWait(STAGE_TEXTS.calcStep1);
-            await Utils.wait(700); // 增加额外停顿时间，再显示下一步
+            await Utils.wait(500); // 增加额外停顿时间，再显示下一步
             // 4. 显示第二步算式
             step2.classList.add('show');
             // ⚠️ 5. 再次等待第二句语音播放完毕
@@ -785,18 +785,20 @@ class UIManager {
 
         this.guideStep = 1;
         this.setInputDisabled(true);
+
+        // 立即切换到引导模式的大环境视图（压暗无关区域）
+        this.els.appShell.classList.add('guide-active');
+
         await this.showTipAndWait(STAGE_TEXTS.startGuide);
         this.setInputDisabled(false);
 
-        // 统一聚光灯效果：激活遮罩层
-        this.els.focusOverlay.classList.add('active');
-
-        // Remove paper rotations for a cleaner guide view
-        this.els.appShell.classList.add('guide-active');
-
-        // Highlight inputs and numpad
-        this.els.inputFixed.querySelector('.digit-inputs').classList.add('guide-highlight');
+        // 语音结束后，才让输入框和键盘区域被视觉关注（添加耀眼的高亮框）
+        this.els.cellTen.classList.add('guide-highlight');
+        this.els.cellGe.classList.add('guide-highlight');
         this.els.numpad.classList.add('guide-highlight');
+
+        // Ensure focus is given to the input so user can type immediately
+        this.els.inputTen.focus();
     }
 
     hideSecretButton() {
@@ -871,7 +873,10 @@ class UIManager {
             this.uninterruptibleVoice = true;
             this.showTipAndWait(STAGE_TEXTS.ninthLight).then(() => {
                 this.uninterruptibleVoice = false;
-                if (window.g) window.g.trackComplete();
+                setTimeout(() => {
+                    alert('跳转到下一环节');
+                    if (window.g) window.g.trackComplete();
+                }, 1000);
             });
         }
     }
@@ -889,7 +894,7 @@ class UIManager {
             const targetBrightness = unlitOpacitySlider.value / 100;
             const isPersistent = matrixPersistentToggle ? matrixPersistentToggle.checked : false;
 
-            if (isPersistent || (this.isLightingAnim && this.isFirstTimeGuide)) {
+            if (isPersistent || this.isLightingAnim) {
                 document.documentElement.style.setProperty('--unlit-brightness', targetBrightness);
             } else {
                 document.documentElement.style.setProperty('--unlit-brightness', 1);
@@ -951,6 +956,9 @@ class UIManager {
             });
             inp.addEventListener('click', () => this.hideInputGuide());
         });
+
+        cellTen.addEventListener('click', () => { if (!inputTen.disabled && !inputTen.readOnly) inputTen.focus(); });
+        cellGe.addEventListener('click', () => { if (!inputGe.disabled && !inputGe.readOnly) inputGe.focus(); });
 
         const removeFirstTimeHand = () => {
             const hand = document.querySelector('.first-time-hand');
@@ -1141,10 +1149,12 @@ class UIManager {
             this.audio.playBgm();
 
             if (this.isFirstTimeGuide) {
-                this.els.focusOverlay.classList.add('active');
-                setTimeout(() => this.startFirstTimeGuide(), 500);
+                setTimeout(() => this.startFirstTimeGuide(), 0);
             } else {
-                setTimeout(() => { if (this.game.lightRecord.length === 0) this.showHandGuideOnGe(); }, 1500);
+                setTimeout(() => {
+                    if (this.game.lightRecord.length === 0) this.showHandGuideOnGe();
+                    this.els.inputTen.focus();
+                }, 1500);
             }
         });
         this.els.boardWrap.addEventListener('click', (e) => {
@@ -1277,9 +1287,8 @@ class UIManager {
                 this.persistentTip = true;
 
                 // 撤销遮罩
+                // 移除引导模式及对应高亮
                 this.clearGuideHighlights();
-                this.els.focusOverlay.classList.remove('active', 'light-mask');
-                this.els.focusOverlay.style.background = '';
                 this.els.appShell.classList.remove('guide-active');
 
                 this.isFirstTimeGuide = false;
@@ -1370,8 +1379,6 @@ class UIManager {
         this.removeAllCircles();
         this.hideSecretButton();
 
-        this.els.focusOverlay.classList.remove('active', 'light-mask');
-        this.els.focusOverlay.style.background = '';
         this.els.appShell.classList.remove('guide-active');
         this.persistentTip = false;
 
