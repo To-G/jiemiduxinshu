@@ -39,9 +39,10 @@ const STAGE_TEXTS = {
     calcStep1: "根据规则，先减去它个位上的数字",
     calcStep2: "然后再减去十位上的数字",
     calcStep3: "这就是运算后的结果啦",
-    firstLight: "读心术的奥秘就藏在点亮的数字里，你可以多输入一些两位数，找找它们的数学规律。",
-    secondLight: "多输入一些数字，找找它们的数学规律。",
-    thirdLight: "多输入一些数字，找找它们的数学规律。",
+    firstLight1: "读心术的奥秘就藏在点亮的数字里，",
+    firstLight2: "你可以多输入一些数，找找点亮的结果有什么数学规律。",
+    secondLight: "多输入一些数，找找点亮的结果有什么数学规律。",
+    thirdLight: "多输入一些数，找找点亮的结果有什么数学规律。",
     fourthLight: "如果发现了这些数字的规律，你可以点下面的按钮。",
     fifthLight: "仔细观察一下这些数字哦~",
     sixthLight: "这些数好像都是某个数字的倍数",
@@ -88,11 +89,17 @@ class AudioManager {
         this.bgm = document.getElementById('bgm');
         this.voiceAudio = document.getElementById('voiceAudio');
         this.effectAudio = document.getElementById('effectAudio');
-        if (this.bgm) this.bgm.volume = 0.3;
+        if (this.bgm) this.bgm.volume = 0.15;
     }
 
     async playBgm() {
         try { if (this.bgm) await this.bgm.play(); } catch (e) { console.log('BGM Play failed:', e); }
+    }
+
+    restoreBgmVolume() {
+        if (this.bgm) {
+            this.bgm.volume = 0.4;
+        }
     }
 
     switchBgm(path) {
@@ -422,17 +429,15 @@ class UIManager {
         this.els.normalTip.classList.remove('show');
         void this.els.normalTip.offsetWidth;
 
-        const showTextToggle = document.getElementById('showGuideTextToggle');
-        const enableVoiceToggle = document.getElementById('enableGuideVoiceToggle');
 
-        if (!showTextToggle || showTextToggle.checked) {
-            let htmlText = t.replace(/(\d+到\d+|\d+几|\d+)/g, '<span class="highlight-num">$1</span>').replace(/\n/g, '<br>');
-            this.els.normalTip.innerHTML = htmlText;
-            this.els.normalTip.classList.add('show');
-        }
+        let htmlText = t.replace(/(\d+到\d+|\d+几|\d+)/g, '<span class="highlight-num">$1</span>').replace(/\n/g, '<br>');
+        this.els.normalTip.innerHTML = htmlText;
+        this.els.normalTip.classList.add('show');
 
-        if (playVoice && (!enableVoiceToggle || enableVoiceToggle.checked)) {
+        if (playVoice) {
+
             this.tts.speak(t);
+
         }
     }
 
@@ -452,18 +457,14 @@ class UIManager {
         this.els.normalTip.classList.remove('show');
         void this.els.normalTip.offsetWidth;
 
-        const showTextToggle = document.getElementById('showGuideTextToggle');
-        const enableVoiceToggle = document.getElementById('enableGuideVoiceToggle');
 
-        if (!showTextToggle || showTextToggle.checked) {
-            let htmlText = t.replace(/(\d+到\d+|\d+几|\d+)/g, '<span class="highlight-num">$1</span>').replace(/\n/g, '<br>');
-            this.els.normalTip.innerHTML = htmlText;
-            this.els.normalTip.classList.add('show');
-        }
+        let htmlText = t.replace(/(\d+到\d+|\d+几|\d+)/g, '<span class="highlight-num">$1</span>').replace(/\n/g, '<br>');
+        this.els.normalTip.innerHTML = htmlText;
+        this.els.normalTip.classList.add('show');
 
-        if (!enableVoiceToggle || enableVoiceToggle.checked) {
-            await this.tts.speakAndWait(t);
-        }
+
+        await this.tts.speakAndWait(t);
+
     }
 
     getNextTenHint(curTen) {
@@ -489,6 +490,7 @@ class UIManager {
     guideInputForNextTry(message = STAGE_TEXTS.inputGuideDefault) {
         if (this.isFocusAnimating) return;
         this.setInputDisabled(false);
+        this.els.inputFixed.classList.remove('dimmed-inputs');
         this.clearDigitInputs();
 
         if (this.game.lightRecord.length === 0) {
@@ -514,13 +516,9 @@ class UIManager {
         delete this.els.inputFixed.dataset.guide;
     }
 
-    clearCalc() {
-        // Obsolete in new UI
-    }
 
-    prepareNextRecordBlock() {
-        // Disabled
-    }
+
+
 
     async updateCalcAnimated(num, ge, shi, res) {
         const c1 = num - ge;
@@ -772,9 +770,7 @@ class UIManager {
         this.showTip(STAGE_TEXTS.thirdLight, false);
     }
 
-    showHandGuideOnGe() {
-        // 小手功能已根据需求移除
-    }
+
 
     clearGuideHighlights() {
         document.querySelectorAll('.guide-highlight').forEach(el => el.classList.remove('guide-highlight', 'no-bg'));
@@ -854,12 +850,10 @@ class UIManager {
         const cnt = this.game.lightRecord.length;
         if (cnt >= 6) this.els.boardWrap.classList.add('show-bubbles');
 
-        if (cnt === 1) this.showTip(STAGE_TEXTS.firstLight, false);
+        if (cnt === 1) { if (!this.isFirstTimeGuide) { this.showTip(STAGE_TEXTS.firstLight1 + STAGE_TEXTS.firstLight2, false); } }
         else if (cnt === 2) this.showTip(STAGE_TEXTS.secondLight, false);
         else if (cnt === 4) {
-            this.showTipAndWait(STAGE_TEXTS.fourthLight).then(() => {
-                this.revealSecretButton(0);
-            });
+            // fourthLight 逻辑已移动到动画结束后执行
         }
         // else if (cnt === 5) { this.revealSecretButton(0); this.showTip(STAGE_TEXTS.fifthLight); }  // 暂时停用
         else if (cnt === 5) { this.revealSecretButton(0); }
@@ -886,31 +880,7 @@ class UIManager {
         const { inputTen, inputGe, cellTen, cellGe, numpad, numpadClear, numpadDel2, randomBtn, secretBtn, replayBtn, continueExploreBtn, startBtn } = this.els;
 
 
-        const unlitOpacitySlider = document.getElementById('unlitOpacitySlider');
-        const matrixPersistentToggle = document.getElementById('matrixPersistentToggle');
 
-        this.applyMatrixBrightness = () => {
-            if (!unlitOpacitySlider) return;
-            const targetBrightness = unlitOpacitySlider.value / 100;
-            const isPersistent = matrixPersistentToggle ? matrixPersistentToggle.checked : false;
-
-            if (isPersistent || this.isLightingAnim) {
-                document.documentElement.style.setProperty('--unlit-brightness', targetBrightness);
-            } else {
-                document.documentElement.style.setProperty('--unlit-brightness', 1);
-            }
-        };
-
-        // 兼容：保留旧名引用
-        this.applyMatrixOpacity = this.applyMatrixBrightness;
-
-        if (unlitOpacitySlider) {
-            unlitOpacitySlider.addEventListener('input', this.applyMatrixBrightness);
-            this.applyMatrixBrightness();
-        }
-        if (matrixPersistentToggle) {
-            matrixPersistentToggle.addEventListener('change', this.applyMatrixBrightness);
-        }
 
         const debugToggle = document.getElementById('debugToggle');
         const debugPanel = document.getElementById('debugPanel');
@@ -960,16 +930,10 @@ class UIManager {
         cellTen.addEventListener('click', () => { if (!inputTen.disabled && !inputTen.readOnly) inputTen.focus(); });
         cellGe.addEventListener('click', () => { if (!inputGe.disabled && !inputGe.readOnly) inputGe.focus(); });
 
-        const removeFirstTimeHand = () => {
-            const hand = document.querySelector('.first-time-hand');
-            if (hand) hand.remove();
-        };
-        numpad.addEventListener('click', removeFirstTimeHand);
-        [inputTen, inputGe].forEach(inp => inp.addEventListener('input', removeFirstTimeHand));
+
 
         inputTen.addEventListener('keydown', (e) => { if (this.isResultAnimating || this.isFocusAnimating) e.preventDefault(); });
         inputTen.addEventListener('input', () => {
-
             if (this.isResultAnimating || this.isFocusAnimating) { inputTen.value = ''; return; }
             this.hideInputGuide();
             if (!this.persistentTip) this.els.normalTip.classList.remove('show');
@@ -1012,35 +976,54 @@ class UIManager {
             }
         });
 
-        numpad.addEventListener('click', (e) => {
-
-            const btn = e.target.closest('.numpad-btn');
-            if (!btn || this.isResultAnimating || this.isFocusAnimating) return;
-            const digit = btn.dataset.digit;
-            if (digit === undefined) return;
-
+        const handleDigit = (digit) => {
+            if (this.isResultAnimating || this.isFocusAnimating || inputTen.disabled) return;
             this.hideInputGuide();
             if (!this.persistentTip) this.els.normalTip.classList.remove('show');
 
             if (!inputTen.value) {
-                if (this.guideStep === 1 && digit !== '1') {
-                    return;
-                }
+                if (this.guideStep === 1 && digit !== '1') return;
                 if (digit === '0') {
                     this.showTip(STAGE_TEXTS.invalidTen);
                     return;
                 }
                 inputTen.value = digit;
-                this.prepareNextRecordBlock();
                 inputGe.focus();
             } else if (!inputGe.value) {
                 inputGe.value = digit;
                 this.executeCalc(Number(inputTen.value + digit));
             }
+        };
+
+        const handleDel = () => {
+            if (this.isResultAnimating || this.isFocusAnimating || inputTen.disabled) return;
+            if (inputGe.value) { inputGe.value = ''; inputGe.focus(); }
+            else if (inputTen.value && !inputTen.readOnly) { inputTen.value = ''; inputTen.focus(); }
+            else if (inputTen.readOnly && inputGe.value === '') inputGe.focus();
+            this.hideInputGuide();
+            this.clearCalc();
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement === inputTen || document.activeElement === inputGe) return;
+            if (e.key >= '0' && e.key <= '9') {
+                e.preventDefault();
+                handleDigit(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+                handleDel();
+            }
+        });
+
+        numpad.addEventListener('click', (e) => {
+            const btn = e.target.closest('.numpad-btn');
+            if (!btn) return;
+            const digit = btn.dataset.digit;
+            if (digit !== undefined) handleDigit(digit);
         });
 
         numpadClear.addEventListener('click', () => {
-            if (this.isResultAnimating || this.isFocusAnimating) return;
+            if (this.isResultAnimating || this.isFocusAnimating || inputTen.disabled) return;
             if (!inputTen.readOnly) inputTen.value = '';
             inputGe.value = '';
             if (inputTen.readOnly) { inputTen.value = '1'; inputGe.focus(); } else inputTen.focus();
@@ -1048,14 +1031,7 @@ class UIManager {
             this.clearCalc();
         });
 
-        numpadDel2.addEventListener('click', () => {
-            if (this.isResultAnimating || this.isFocusAnimating) return;
-            if (inputGe.value) { inputGe.value = ''; inputGe.focus(); }
-            else if (inputTen.value && !inputTen.readOnly) { inputTen.value = ''; inputTen.focus(); }
-            else if (inputTen.readOnly && inputGe.value === '') inputGe.focus();
-            this.hideInputGuide();
-            this.clearCalc();
-        });
+        numpadDel2.addEventListener('click', handleDel);
 
         if (randomBtn) {
             randomBtn.addEventListener('click', () => {
@@ -1152,7 +1128,7 @@ class UIManager {
                 setTimeout(() => this.startFirstTimeGuide(), 0);
             } else {
                 setTimeout(() => {
-                    if (this.game.lightRecord.length === 0) this.showHandGuideOnGe();
+
                     this.els.inputTen.focus();
                 }, 1500);
             }
@@ -1200,17 +1176,13 @@ class UIManager {
         });
         list.parentElement.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    finalizePendingBlock() {
-        // Disabled
-    }
 
-    abortPendingBlock() {
-        // Disabled
-    }
+
+
 
     clearCalc() {
         this.clearDigitInputs();
-        this.abortPendingBlock();
+
     }
 
     async executeCalc(num, isRandomAction = false) {
@@ -1267,7 +1239,9 @@ class UIManager {
                 this.game.lastTenDigit = curTen;
             }
 
-            this.updateTip(num);
+            if (isNew) {
+                this.updateTip(num);
+            }
 
             try { await this.animateResultToCell(res, el); } finally {
                 this.lightResultCell(el);
@@ -1281,6 +1255,22 @@ class UIManager {
                 }
             }
 
+            // 等待刚点亮的数字自身的闪烁动画(1.2秒)播放完毕，避免和接下来的全局高亮/语音产生视觉与节奏冲突
+            if (isNew) {
+                await Utils.wait(1200);
+            }
+
+            // 动画完成后触发 fourthLight
+            if (isNew && this.game.lightRecord.length === 4 && !this.isFirstTimeGuide) {
+                const litCells = document.querySelectorAll('.num.light');
+                litCells.forEach(cell => cell.classList.add('highlight-float'));
+
+                this.showTipAndWait(STAGE_TEXTS.fourthLight).then(() => {
+                    this.revealSecretButton(0);
+                    litCells.forEach(cell => cell.classList.remove('highlight-float'));
+                });
+            }
+
             if (this.isFirstTimeGuide) {
                 // 引导模式下的特殊处理
                 this.guideStep = 4;
@@ -1292,7 +1282,7 @@ class UIManager {
                 this.els.appShell.classList.remove('guide-active');
 
                 this.isFirstTimeGuide = false;
-                this.audio.switchBgm('audio/Proof_Of_The_Pattern.mp3');
+                // this.audio.switchBgm('audio/Proof_Of_The_Pattern.mp3');
 
                 // 补充 09 的气泡
                 const el9 = this.numDomList[8];
@@ -1315,7 +1305,21 @@ class UIManager {
 
                 // 播放总结语音（在解锁UI前播放）
                 this.uninterruptibleVoice = true;
-                await this.showTipAndWait(STAGE_TEXTS.firstLight);
+                await this.showTipAndWait(STAGE_TEXTS.firstLight1);
+
+                // 让点亮的数字高亮发光浮起
+                const litCells = document.querySelectorAll('.num.light');
+                litCells.forEach(cell => {
+                    cell.classList.add('highlight-float');
+                });
+
+                await this.showTipAndWait(STAGE_TEXTS.firstLight2);
+                this.audio.restoreBgmVolume();
+
+                // 语音播完落下去
+                litCells.forEach(cell => {
+                    cell.classList.remove('highlight-float');
+                });
                 this.uninterruptibleVoice = false;
 
                 // 语音播完后，左侧区域发光虚线边框闪烁提示学生输入
