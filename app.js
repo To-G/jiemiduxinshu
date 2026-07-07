@@ -40,7 +40,7 @@ const STAGE_TEXTS = {
     calcStep2: "然后再减去十位上的数字",
     calcStep3: "这就是运算后的结果啦",
     firstLight1: "读心术的奥秘就藏在点亮的数字里，",
-    firstLight2: "你可以多输入一些数，找找点亮的结果有什么数学规律。",
+    firstLight2: "多输入一些10到99的数，找找点亮的结果有什么数学规律。",
     secondLight: "多输入一些数，找找点亮的结果有什么数学规律。",
     thirdLight: "多输入一些数，找找点亮的结果有什么数学规律。",
     fourthLight: "如果发现了这些数字的规律，你可以点下面的按钮。",
@@ -170,6 +170,13 @@ class TTSManager {
         if (audioKey) {
             const url = `audio/${audioKey}.mp3`;
             this.currentAudio = new Audio(url);
+
+            // 可在此处调整各个语音的播放速度
+            if (audioKey === 'firstLight1') {
+                this.currentAudio.playbackRate = 1.0; // 提高 firstLight1 的播放速度
+            } else {
+                this.currentAudio.playbackRate = 1.0;
+            }
 
             if (callback) {
                 this.currentAudio.addEventListener('ended', callback);
@@ -497,12 +504,20 @@ class UIManager {
             this.els.inputTen.readOnly = false;
             this.els.cellTen.classList.remove('locked');
             this.els.inputTen.focus();
-            if (this.els.randomBtn) this.els.randomBtn.style.display = 'flex';
+            if (this.els.randomBtn) {
+                this.els.randomBtn.style.visibility = 'visible';
+                this.els.randomBtn.style.opacity = '1';
+                this.els.randomBtn.style.pointerEvents = 'auto';
+            }
         } else {
             this.els.inputTen.readOnly = false;
             this.els.cellTen.classList.remove('locked');
             this.els.inputTen.focus();
-            if (this.els.randomBtn) this.els.randomBtn.style.display = 'flex';
+            if (this.els.randomBtn) {
+                this.els.randomBtn.style.visibility = 'visible';
+                this.els.randomBtn.style.opacity = '1';
+                this.els.randomBtn.style.pointerEvents = 'auto';
+            }
         }
 
         // this.els.inputFixed.dataset.guide = message;
@@ -781,6 +796,8 @@ class UIManager {
 
         this.guideStep = 1;
         this.setInputDisabled(true);
+        this.els.cellTen.classList.remove('focused');
+        this.els.cellGe.classList.remove('focused');
 
         // 立即切换到引导模式的大环境视图（压暗无关区域）
         this.els.appShell.classList.add('guide-active');
@@ -1125,10 +1142,10 @@ class UIManager {
             this.audio.playBgm();
 
             if (this.isFirstTimeGuide) {
-                setTimeout(() => this.startFirstTimeGuide(), 0);
+                this.els.appShell.classList.add('guide-active');
+                this.startFirstTimeGuide();
             } else {
                 setTimeout(() => {
-
                     this.els.inputTen.focus();
                 }, 1500);
             }
@@ -1276,14 +1293,6 @@ class UIManager {
                 this.guideStep = 4;
                 this.persistentTip = true;
 
-                // 撤销遮罩
-                // 移除引导模式及对应高亮
-                this.clearGuideHighlights();
-                this.els.appShell.classList.remove('guide-active');
-
-                this.isFirstTimeGuide = false;
-                // this.audio.switchBgm('audio/Proof_Of_The_Pattern.mp3');
-
                 // 补充 09 的气泡
                 const el9 = this.numDomList[8];
                 if (el9 && el9.classList.contains('light') && !el9.querySelector('.hover-bubble')) {
@@ -1298,20 +1307,36 @@ class UIManager {
                 this.clearDigitInputs();
 
                 // 提前显示随机按钮（不等语音播完）
-                if (this.els.randomBtn) this.els.randomBtn.style.display = 'flex';
+                if (this.els.randomBtn) {
+                    this.els.randomBtn.style.visibility = 'visible';
+                    this.els.randomBtn.style.opacity = '1';
+                    this.els.randomBtn.style.pointerEvents = 'auto';
+                }
 
                 // 停止当前TTS
                 this.tts.stop();
 
                 // 播放总结语音（在解锁UI前播放）
                 this.uninterruptibleVoice = true;
-                await this.showTipAndWait(STAGE_TEXTS.firstLight1);
-
-                // 让点亮的数字高亮发光浮起
+                
+                const firstLight1Promise = this.showTipAndWait(STAGE_TEXTS.firstLight1);
+                
                 const litCells = document.querySelectorAll('.num.light');
-                litCells.forEach(cell => {
-                    cell.classList.add('highlight-float');
-                });
+                // 延迟约 1.5 秒，刚好说到“点亮的数字”时，让点亮的数字高亮发光浮起
+                setTimeout(() => {
+                    litCells.forEach(cell => {
+                        cell.classList.add('highlight-float');
+                    });
+                }, 1500);
+
+                await firstLight1Promise;
+
+                // 撤销遮罩
+                // 移除引导模式及对应高亮
+                this.clearGuideHighlights();
+                this.els.appShell.classList.remove('guide-active');
+
+                this.isFirstTimeGuide = false;
 
                 await this.showTipAndWait(STAGE_TEXTS.firstLight2);
                 this.audio.restoreBgmVolume();

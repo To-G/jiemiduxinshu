@@ -322,7 +322,6 @@ body::before {
 
 .app-shell.active {
     display: flex;
-    animation: revealApp .6s ease both;
 }
 
 .app-header {
@@ -455,6 +454,7 @@ body::before {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(139, 92, 246, 0.1), inset 0 0 15px rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .flow::before {
@@ -484,6 +484,7 @@ body::before {
     border-radius: 4px;
     isolation: isolate;
     /* Force stacking context */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* 矩阵的背景图层 */
@@ -748,6 +749,7 @@ body::before {
     opacity: 0.5;
     filter: grayscale(1);
     pointer-events: none;
+    transition: none !important;
 }
 
 .random-btn:active {
@@ -1342,17 +1344,35 @@ body::before {
 }
 
 .numpad.guide-highlight {
-    padding: 8px;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.numpad.guide-highlight::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    background: var(--guide-highlight-bg);
+    border: var(--guide-highlight-border);
     border-radius: 16px;
+    box-shadow: var(--guide-highlight-shadow);
+    animation: guideFocusPulse 1.5s ease-in-out infinite;
+    z-index: -1;
+    pointer-events: none;
 }
 
 .numpad.guide-highlight::after {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
     border-radius: 18px;
     background-image:
         linear-gradient(90deg, #3b82f6 50%, transparent 50%),
@@ -1384,6 +1404,7 @@ body::before {
     background-image: none !important;
     border-color: rgba(0, 0, 0, 0.5) !important;
     box-shadow: inset 0 0 50px rgba(0,0,0,0.5) !important;
+    transition: none !important;
 }
 
 .guide-active .header-tip-slot {
@@ -1391,6 +1412,7 @@ body::before {
     border: 1px solid rgba(167, 139, 250, 0.5) !important;
     box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
     transform: translateY(2px) scale(1.01) !important;
+    transition: none !important;
 }
 
 .guide-active .header-tip {
@@ -1404,15 +1426,22 @@ body::before {
 .guide-active .numpad-btn.clear-btn {
     opacity: 0.35;
     pointer-events: none;
+    transition: none !important;
 }
 
 .guide-active .num:not(.light) {
     opacity: 0.35;
     pointer-events: none;
+    transition: none !important;
+}
+
+.guide-active .digit-cell {
+    transition: none !important;
 }
 
 .guide-active .boardWrap {
     transform: none !important;
+    transition: none !important;
 }
 
 .focus-fly-layer {
