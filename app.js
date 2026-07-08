@@ -39,7 +39,7 @@ const STAGE_TEXTS = {
     calcStep1: "根据规则，先减去它个位上的数字",
     calcStep2: "然后再减去十位上的数字",
     calcStep3: "这就是运算后的结果啦",
-    firstLight1: "读心术的奥秘就藏在点亮的数字里，",
+    firstLight1: "读心术的奥秘就藏在点亮的数字里",
     firstLight2: "多输入一些10到99的数，找找点亮的结果有什么数学规律。",
     secondLight: "多输入一些数，找找点亮的结果有什么数学规律。",
     thirdLight: "多输入一些数，找找点亮的结果有什么数学规律。",
@@ -896,6 +896,8 @@ class UIManager {
     bindEvents() {
         const { inputTen, inputGe, cellTen, cellGe, numpad, numpadClear, numpadDel2, randomBtn, secretBtn, replayBtn, continueExploreBtn, startBtn } = this.els;
 
+        // 跟踪用户最近聚焦的输入框，供虚拟键盘判断输入目标
+        this.lastFocusedInput = inputTen;
 
 
 
@@ -930,6 +932,7 @@ class UIManager {
 
         [inputTen, inputGe].forEach(inp => {
             inp.addEventListener('focus', () => {
+                this.lastFocusedInput = inp;
                 cellTen.classList.toggle('focused', document.activeElement === inputTen);
                 cellGe.classList.toggle('focused', document.activeElement === inputGe);
             });
@@ -998,13 +1001,14 @@ class UIManager {
             this.hideInputGuide();
             if (!this.persistentTip) this.els.normalTip.classList.remove('show');
 
-            if (!inputTen.value) {
+            if (!inputTen.value || this.lastFocusedInput === inputTen) {
                 if (this.guideStep === 1 && digit !== '1') return;
                 if (digit === '0') {
                     this.showTip(STAGE_TEXTS.invalidTen);
                     return;
                 }
                 inputTen.value = digit;
+                inputGe.value = '';
                 inputGe.focus();
             } else if (!inputGe.value) {
                 inputGe.value = digit;
@@ -1244,6 +1248,7 @@ class UIManager {
         const isAlreadyLight = this.game.lightRecord.includes(res);
         const curTen = shi;
         let isNew = !isAlreadyLight;
+        let fourthLightPromise = null;
 
         if (res >= 1 && res <= 99) {
             const el = this.numDomList[res - 1];
@@ -1282,7 +1287,7 @@ class UIManager {
                 const litCells = document.querySelectorAll('.num.light');
                 litCells.forEach(cell => cell.classList.add('highlight-float'));
 
-                this.showTipAndWait(STAGE_TEXTS.fourthLight).then(() => {
+                fourthLightPromise = this.showTipAndWait(STAGE_TEXTS.fourthLight).then(() => {
                     this.revealSecretButton(0);
                     litCells.forEach(cell => cell.classList.remove('highlight-float'));
                 });
@@ -1318,9 +1323,9 @@ class UIManager {
 
                 // 播放总结语音（在解锁UI前播放）
                 this.uninterruptibleVoice = true;
-                
+
                 const firstLight1Promise = this.showTipAndWait(STAGE_TEXTS.firstLight1);
-                
+
                 const litCells = document.querySelectorAll('.num.light');
                 // 延迟约 1.5 秒，刚好说到“点亮的数字”时，让点亮的数字高亮发光浮起
                 setTimeout(() => {
@@ -1391,7 +1396,15 @@ class UIManager {
             return;
         }
 
-        if (isNew) this.guideInputForNextTry();
+        if (isNew) {
+            if (fourthLightPromise) {
+                fourthLightPromise.then(() => {
+                    this.guideInputForNextTry();
+                });
+            } else {
+                this.guideInputForNextTry();
+            }
+        }
         else if (isAlreadyLight) {
             // 已点亮的结果：静默解锁输入框，不触发任何语音或提示
             this.guideInputForNextTry();

@@ -1162,7 +1162,7 @@ body::before {
 
 #secretBtn.reveal {
     background: var(--secret-btn-reveal-bg);
-    border: 2px dashed var(--secret-btn-reveal-border);
+    border: 2px solid var(--secret-btn-reveal-border);
     color: var(--secret-btn-reveal-text);
     box-shadow: 0 4px 10px rgba(217, 119, 6, 0.1);
 }
